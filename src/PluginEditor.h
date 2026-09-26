@@ -38,6 +38,7 @@ private:
     void drawReverbRoom(juce::Graphics&);
     void drawResonator(juce::Graphics&);
     void drawPhaser(juce::Graphics&);
+    void drawEnhancer(juce::Graphics&);
     BatchlyProcessor& processor;
     DeckLookAndFeel look;
     std::array<juce::Slider, 9> knobs;

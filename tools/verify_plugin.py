@@ -304,5 +304,47 @@ for index, name in enumerate(("Slow orbit", "Silver sweep", "Deep current", "Ret
     sf.write(args.output / f"{15 + index:02}-helix-{name.lower().replace(' ', '-')}.wav", phase.T, 48000, subtype="PCM_24")
     if index == 0: report["helix_render_seconds_for_14_seconds"] = time.perf_counter() - start
 report["checks"].append("All five original Helix presets render with tails and no clipping")
+for sample_rate in (44100, 48000, 96000):
+    p = load_plugin(str(args.plugin)); p.program = "Clear vocal"
+    assert p.gleam_enabled and not any(getattr(p, name) for name in ("drift_enabled", "patina_enabled", "atrium_enabled", "chime_enabled", "helix_enabled"))
+    t = np.arange(sample_rate) / sample_rate
+    probe = np.stack([.1 * np.sin(2 * np.pi * 11000 * t)] * 2).astype(np.float32)
+    p.gleam_mix = 0
+    assert np.max(np.abs(p(probe, sample_rate) - probe)) < 1e-6
+    p.gleam_mix = 1
+    processed = p(probe, sample_rate, buffer_size=137)
+    assert np.isfinite(processed).all() and np.max(np.abs(processed)) < 1
+    assert np.sqrt(np.mean((processed - probe) ** 2)) > .005
+    assert np.max(np.abs(processed[0] - processed[1])) < 1e-7
+    assert p(probe[:1], sample_rate).shape == probe[:1].shape
+    p.bypass = True
+    assert np.max(np.abs(p(probe, sample_rate) - probe)) < 1e-6
+    p.bypass = False
+    assert np.max(np.abs(p(np.zeros_like(probe), sample_rate))) == 0
+    report["checks"].append(f"{sample_rate} Hz: Gleam dry, brightness, stereo, mono, bypass, silence")
+p.gleam_air_db = 7.3
+p.gleam_tame = .82
+for name in ("drift_enabled", "patina_enabled", "atrium_enabled", "chime_enabled", "helix_enabled"): setattr(p,name,True)
+saved = p.raw_state
+p.program = "Soft lift"
+p.raw_state = saved
+assert abs(p.gleam_air_db - 7.3) < .02 and abs(p.gleam_tame - .82) < .002
+assert all(getattr(p,name) for name in ("drift_enabled", "patina_enabled", "atrium_enabled", "chime_enabled", "helix_enabled", "gleam_enabled"))
+report["checks"].append("Six-effect rack and edited Gleam controls survive state recall")
+for version in ("drift-0.1.0", "patina-0.2.0", "atrium-0.3.0", "chime-0.4.0", "helix-0.5.0"):
+    p.gleam_enabled = True
+    p.raw_state = (Path(__file__).resolve().parents[1] / f"tests/fixtures/{version}.bapreset").read_bytes()
+    assert not p.gleam_enabled and abs(p.gleam_air_db - 4) < .02
+    if version.startswith("helix"):
+        assert p.helix_enabled and abs(p.helix_feedback + .61) < .002
+    report["checks"].append(f"Actual {version} state disables Gleam and retains its saved rack")
+for index, name in enumerate(("Clear vocal", "Silver top", "Drum shine", "Soft lift", "Open mix")):
+    p = load_plugin(str(args.plugin)); p.program = name
+    start = time.perf_counter()
+    bright = p(np.pad(source, ((0, 0), (0, 48000))), 48000, buffer_size=512)
+    assert np.isfinite(bright).all() and np.max(np.abs(bright)) < 1
+    sf.write(args.output / f"{20 + index:02}-gleam-{name.lower().replace(' ', '-')}.wav", bright.T, 48000, subtype="PCM_24")
+    if index == 0: report["gleam_render_seconds_for_13_seconds"] = time.perf_counter() - start
+report["checks"].append("All five original Gleam presets render with no clipping")
 (args.output / "verification.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
 print(json.dumps(report, indent=2))
