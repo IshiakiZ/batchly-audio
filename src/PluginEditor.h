@@ -8,6 +8,7 @@ public:
     DeckLookAndFeel();
     void drawRotarySlider(juce::Graphics&, int, int, int, int, float, float, float, juce::Slider&) override;
     void drawButtonBackground(juce::Graphics&, juce::Button&, const juce::Colour&, bool, bool) override;
+    void drawButtonText(juce::Graphics&, juce::TextButton&, bool, bool) override;
     juce::Font getTextButtonFont(juce::TextButton&, int) override;
     juce::Font getComboBoxFont(juce::ComboBox&) override;
     juce::Font getLabelFont(juce::Label&) override;
@@ -31,14 +32,19 @@ private:
     void checkUpdates();
     void installUpdate(const batchly::UpdateRelease&);
     void report(const juce::Result&, const juce::String& success);
+    void showModule(int module);
+    void configureKnobs();
+    void drawTapeDeck(juce::Graphics&);
     BatchlyProcessor& processor;
     DeckLookAndFeel look;
     std::array<juce::Slider, 9> knobs;
     std::array<juce::Label, 9> labels;
     std::array<std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment>, 9> attachments;
     juce::TextButton bypass { "BYPASS" }, open { "Open audio" }, play { "Play" }, stop { "Stop" },
-        demo { "Demo" }, exportButton { "Export WAV" }, savePreset { "Save" }, loadPreset { "Load" }, updates { "Updates" };
+        demo { "Demo" }, exportButton { "Export WAV" }, savePreset { "Save" }, loadPreset { "Load" }, updates { "Updates" },
+        driftTab { "Drift" }, patinaTab { "Patina" }, moduleEnabled;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> bypassAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> moduleAttachment;
     juce::ComboBox presets;
     juce::Label status;
     juce::TooltipWindow tooltips { this, 700 };
@@ -48,5 +54,7 @@ private:
     std::array<float, 200> leftHistory {}, rightHistory {};
     size_t historyPosition = 0;
     float meter = 0;
+    int shownModule = -1;
+    float reelAngle = 0;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(BatchlyEditor)
 };

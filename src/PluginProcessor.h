@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 #pragma once
 #include <juce_audio_utils/juce_audio_utils.h>
-#include "DriftEngine.h"
+#include "RackEngine.h"
 
 class BatchlyProcessor final : public juce::AudioProcessor {
 public:
@@ -18,17 +18,22 @@ public:
     bool acceptsMidi() const override { return false; }
     bool producesMidi() const override { return false; }
     bool isMidiEffect() const override { return false; }
-    double getTailLengthSeconds() const override { return .08; }
-    int getNumPrograms() override { return 5; }
+    double getTailLengthSeconds() const override { return .16; }
+    int getNumPrograms() override { return 10; }
     int getCurrentProgram() override { return currentProgram.load(); }
     void setCurrentProgram(int index) override;
     bool isCurrentProgramModified() const;
+    int getDisplayedProgram() const;
+    void setModuleProgram(int module, int index);
+    int selectedModule() const { return editorModule.load(); }
+    void selectModule(int module) { editorModule.store(juce::jlimit(0, 1, module)); }
     const juce::String getProgramName(int index) override;
     void changeProgramName(int, const juce::String&) override {}
     void getStateInformation(juce::MemoryBlock&) override;
     void setStateInformation(const void*, int) override;
     juce::AudioProcessorParameter* getBypassParameter() const override;
     batchly::DriftParameters readParameters() const noexcept;
+    batchly::RackParameters readRackParameters() const noexcept;
 
     bool isStandalone() const { return wrapperType == wrapperType_Standalone; }
     juce::Result loadAudioFile(const juce::File& file);
@@ -39,15 +44,20 @@ public:
     double playbackPosition() const { return transport.getCurrentPosition(); }
     double duration() const { return transport.getLengthInSeconds(); }
     const juce::File& loadedFile() const { return sourceFile; }
-    static juce::Result exportAudio(const juce::File&, const juce::File&, const batchly::DriftParameters&);
+    static juce::Result exportAudio(const juce::File&, const juce::File&, const batchly::RackParameters&);
     juce::AudioProcessorValueTreeState parameters;
     std::atomic<float> peak { 0 }, motionLeft { 0 }, motionRight { 0 };
+    std::atomic<float> tapeMovement { 0 };
 
 private:
     static juce::AudioProcessorValueTreeState::ParameterLayout makeLayout();
     std::array<std::atomic<float>*, 10> parameterValues {};
-    batchly::DriftEngine engine;
+    std::array<std::atomic<float>*, 8> tapeValues {};
+    std::atomic<float>* driftEnabled = nullptr;
+    std::atomic<float>* patinaEnabled = nullptr;
+    batchly::RackEngine engine;
     std::atomic<int> currentProgram { 0 };
+    std::atomic<int> driftProgram { 0 }, patinaProgram { 0 }, editorModule { 0 };
     juce::AudioFormatManager formats;
     juce::TimeSliceThread readThread { "Audio file read-ahead" };
     std::unique_ptr<juce::AudioFormatReaderSource> readerSource;

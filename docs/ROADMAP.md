@@ -4,8 +4,8 @@ Inventory refreshed September 26, 2026 from installed VST3 filenames and public 
 
 ## Initial order
 
-1. Memory-inspired chorus/vibrato: Drift, the first local preview.
-2. Origin-style tape coloration: add independently implemented resampling and saturation after Drift is evaluated.
+1. Memory-inspired chorus/vibrato: Drift, released in 0.1.
+2. Origin-style tape coloration: Patina, added in 0.2 with original filtered rate reduction, saturation, wear/flutter, generated hiss and chorus.
 3. Focused delay, filter and spatial effects: establish one small, verified module at a time.
 4. Larger multi-effect and vocal processors: only after their component effects work.
 5. Instruments and MIDI tools: separate designs and original or redistributable sound sources.
@@ -55,7 +55,7 @@ The order after Drift is provisional. Category names below describe the installe
 
 ## Distribution
 
-Target: Windows desktop app plus a VST3 rack using the same original engines. Source is prepared for GitHub. Batchly downloads and any browser-hosted processing remain deferred until the owner decides.
+Windows desktop app plus a VST3 rack using the same original engines. Source and preview downloads are on GitHub. Batchly downloads and any browser-hosted processing remain deferred until the owner decides.
 
 ## Visual direction
 

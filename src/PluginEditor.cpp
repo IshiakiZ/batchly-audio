@@ -17,6 +17,20 @@ juce::Font monoFont(float size) {
 }
 const std::array<const char*, 9> ids { "depth", "rate", "wander", "tone", "follow", "noise", "width", "mix", "output" };
 const std::array<const char*, 9> titles { "DEPTH", "RATE", "WANDER", "TONE", "FOLLOW", "NOISE", "WIDTH", "MIX", "OUTPUT" };
+const std::array<const char*, 9> tapeIds { "patina_sample", "patina_drive", "patina_wear", "patina_flutter",
+    "patina_hiss", "patina_chorus", "patina_tone", "patina_mix", "output" };
+const std::array<const char*, 9> tapeTitles { "SAMPLE RATE", "DRIVE", "WEAR", "FLUTTER", "HISS", "CHORUS", "TONE", "MIX", "OUTPUT" };
+const std::array<const char*, 9> tapeHints {
+    "Lower the internal sample rate for a softer, submerged sound. Limited by your host's sample rate.",
+    "Push the original soft saturation curve. Higher values add harmonics and compression.",
+    "Slow tape-speed variation. Adds a wandering pitch bend.",
+    "Faster tape-speed ripple. Small values add gentle instability.",
+    "Generated tape-like hiss. Zero adds no noise; higher values can be heard during silence.",
+    "Blend in a stereo modulated voice for a wider, softer sound.",
+    "Additional top-end rolloff on the tape signal.",
+    "Blend the tape signal with its input. Fully wet avoids parallel delay coloration.",
+    "Final gain after both effects. Keep the output meter below 0 dB."
+};
 const std::array<const char*, 9> hints {
     "Amount of pitch movement. Small amounts thicken; larger amounts bend the pitch.",
     "Speed of the pitch movement in cycles per second.",
@@ -61,7 +75,9 @@ DeckLookAndFeel::DeckLookAndFeel() {
     setColour(juce::TooltipWindow::backgroundColourId, ink);
     setColour(juce::TooltipWindow::textColourId, background);
 }
-juce::Font DeckLookAndFeel::getTextButtonFont(juce::TextButton&, int) { return brandFont(13, true); }
+juce::Font DeckLookAndFeel::getTextButtonFont(juce::TextButton& button, int) {
+    return brandFont(button.getName() == "collection" ? 20.f : 13.f, true);
+}
 juce::Font DeckLookAndFeel::getComboBoxFont(juce::ComboBox&) { return brandFont(14); }
 juce::Font DeckLookAndFeel::getLabelFont(juce::Label& label) {
     return dynamic_cast<juce::Slider*>(label.getParentComponent()) != nullptr ? monoFont(13) : label.getFont();
@@ -108,6 +124,40 @@ void DeckLookAndFeel::drawButtonBackground(juce::Graphics& g, juce::Button& butt
     g.setColour(colour); g.fillRect(bounds);
     g.setColour(button.hasKeyboardFocus(true) ? accent : rule); g.drawRect(bounds, 1);
 }
+void DeckLookAndFeel::drawButtonText(juce::Graphics& g, juce::TextButton& button, bool hover, bool down) {
+    if (button.getName() != "collection") {
+        juce::LookAndFeel_V4::drawButtonText(g, button, hover, down);
+        return;
+    }
+    const auto colour = button.getToggleState() ? background : ink;
+    const float y = button.getHeight() * .5f;
+    if (button.getButtonText() == "Drift") {
+        for (int voice = 0; voice < 2; ++voice) {
+            juce::Path wave;
+            for (int point = 0; point <= 28; ++point) {
+                const float x = 12.f + point;
+                const float value = y + (voice == 0 ? -3.f : 4.f)
+                    + 5.f * std::sin(point * .24f + voice * .8f);
+                if (point == 0) wave.startNewSubPath(x, value); else wave.lineTo(x, value);
+            }
+            g.setColour(voice == 0 ? colour : accent);
+            g.strokePath(wave, juce::PathStrokeType(2));
+        }
+    } else {
+        for (float x : { 19.f, 37.f }) {
+            g.setColour(colour); g.drawEllipse(x - 7, y - 9, 14, 14, 1.8f);
+            g.fillEllipse(x - 2, y - 4, 4, 4);
+            for (int spoke = 0; spoke < 3; ++spoke) {
+                const auto tip = juce::Point<float>(x, y - 2).getPointOnCircumference(5, spoke * 2.0944f);
+                g.drawLine(x, y - 2, tip.x, tip.y, 1.2f);
+            }
+        }
+        g.setColour(accent); g.drawLine(19, y + 7, 37, y + 7, 2);
+    }
+    g.setColour(colour); g.setFont(brandFont(20, true));
+    g.drawText(button.getButtonText(), 53, 0, button.getWidth() - 58, button.getHeight(), juce::Justification::centredLeft);
+    if (button.getToggleState()) { g.setColour(accent); g.fillRect(0, 0, 3, button.getHeight()); }
+}
 
 BatchlyEditor::BatchlyEditor(BatchlyProcessor& p) : AudioProcessorEditor(p), processor(p) {
     setLookAndFeel(&look);
@@ -117,19 +167,6 @@ BatchlyEditor::BatchlyEditor(BatchlyProcessor& p) : AudioProcessorEditor(p), pro
         knob.setSliderStyle(i == 8 ? juce::Slider::LinearHorizontal : juce::Slider::RotaryHorizontalVerticalDrag);
         knob.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 94, 24);
         knob.setRotaryParameters(juce::MathConstants<float>::pi * 1.22f, juce::MathConstants<float>::pi * 2.78f, true);
-        knob.setTooltip(hints[i]); knob.setName(titles[i]);
-        attachments[i] = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(processor.parameters, ids[i], knob);
-        knob.textFromValueFunction = [i](double value) {
-            if (i == 1) return juce::String(value, 2) + " Hz";
-            if (i == 3) return value >= 1000 ? juce::String(value / 1000, 2) + " kHz" : juce::String(value, 0) + " Hz";
-            if (i == 8) return juce::String(value, 1) + " dB";
-            return juce::String(value * 100, 0) + " %";
-        };
-        knob.valueFromTextFunction = [i](const juce::String& value) {
-            auto number = value.getDoubleValue();
-            if (i == 3 && value.containsIgnoreCase("k")) return number * 1000;
-            return (i == 1 || i == 3 || i == 8) ? number : number / 100;
-        };
         addAndMakeVisible(knob);
         labels[i].setText(titles[i], juce::dontSendNotification);
         labels[i].setJustificationType(juce::Justification::centred);
@@ -141,19 +178,25 @@ BatchlyEditor::BatchlyEditor(BatchlyProcessor& p) : AudioProcessorEditor(p), pro
         knob.setDoubleClickReturnValue(true, processor.parameters.getParameter(ids[i])->convertFrom0to1(
             processor.parameters.getParameter(ids[i])->getDefaultValue()));
     }
-    for (auto* button : { &bypass, &open, &play, &stop, &demo, &exportButton, &savePreset, &loadPreset, &updates }) addAndMakeVisible(*button);
+    for (auto* button : { &bypass, &open, &play, &stop, &demo, &exportButton, &savePreset, &loadPreset, &updates,
+                         &driftTab, &patinaTab, &moduleEnabled }) addAndMakeVisible(*button);
     bypass.setClickingTogglesState(true);
     bypassAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(processor.parameters, "bypass", bypass);
-    bypass.setTooltip("Compare with the original signal. The change is faded to prevent clicks.");
-    for (int i = 0; i < processor.getNumPrograms(); ++i) presets.addItem(processor.getProgramName(i), i + 1);
-    presets.setSelectedId(processor.getCurrentProgram() + 1, juce::dontSendNotification);
-    presets.onChange = [this] { processor.setCurrentProgram(presets.getSelectedId() - 1); };
+    bypass.setTooltip("Bypass both effects and Output to compare with the original signal. Changes are faded to prevent clicks.");
+    presets.onChange = [this] { if (presets.getSelectedId() > 0) processor.setModuleProgram(shownModule, presets.getSelectedId() - 1); };
     presets.setTooltip("Choose a starting point, then adjust any control.");
     addAndMakeVisible(presets);
+    driftTab.setName("collection"); patinaTab.setName("collection");
+    driftTab.setTooltip("Show Drift controls. The signal chain stays unchanged.");
+    patinaTab.setTooltip("Show Patina controls. Use PATINA ON/OFF to enable or disable its sound.");
+    driftTab.onClick = [this] { showModule(0); };
+    patinaTab.onClick = [this] { showModule(1); };
+    moduleEnabled.setClickingTogglesState(true);
+    moduleEnabled.setTooltip("Switch this effect on or off. The other effect keeps its own setting.");
     open.onClick = [this] { chooseAudio(); };
     play.onClick = [this] { processor.play(); };
     stop.onClick = [this] { processor.stop(); };
-    demo.onClick = [this] { processor.playDemo(); status.setText("Original synthesized demo. Adjust Mix to compare chorus and vibrato.", juce::dontSendNotification); };
+    demo.onClick = [this] { processor.playDemo(); status.setText("Original synthesized demo. Adjust the controls or toggle BYPASS to compare.", juce::dontSendNotification); };
     exportButton.onClick = [this] { chooseExport(); };
     savePreset.onClick = [this] { choosePreset(true); };
     loadPreset.onClick = [this] { choosePreset(false); };
@@ -164,7 +207,48 @@ BatchlyEditor::BatchlyEditor(BatchlyProcessor& p) : AudioProcessorEditor(p), pro
     status.setText(processor.isStandalone() ? "Drop an audio file here, or try the built-in demo." : "Audio comes from your DAW track. Double-click a knob to reset it.", juce::dontSendNotification);
     addAndMakeVisible(status);
     for (auto* button : { &open, &play, &stop, &demo, &exportButton }) button->setVisible(processor.isStandalone());
+    showModule(processor.selectedModule());
     startTimerHz(30);
+}
+void BatchlyEditor::showModule(int module) {
+    shownModule = juce::jlimit(0, 1, module);
+    processor.selectModule(shownModule);
+    configureKnobs();
+    presets.clear(juce::dontSendNotification);
+    for (int i = 0; i < 5; ++i) presets.addItem(processor.getProgramName(shownModule * 5 + i), i + 1);
+    presets.setSelectedId(processor.getDisplayedProgram() % 5 + 1, juce::dontSendNotification);
+    moduleAttachment.reset();
+    moduleAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(processor.parameters,
+        shownModule == 0 ? "drift_enabled" : "patina_enabled", moduleEnabled);
+    driftTab.setToggleState(shownModule == 0, juce::dontSendNotification);
+    patinaTab.setToggleState(shownModule == 1, juce::dontSendNotification);
+    moduleEnabled.setButtonText((shownModule == 0 ? "DRIFT " : "PATINA ") + juce::String(moduleEnabled.getToggleState() ? "ON" : "OFF"));
+    repaint();
+}
+void BatchlyEditor::configureKnobs() {
+    const bool tape = shownModule == 1;
+    for (size_t i = 0; i < knobs.size(); ++i) {
+        attachments[i].reset();
+        auto& knob = knobs[i];
+        const auto id = tape ? tapeIds[i] : ids[i];
+        attachments[i] = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(processor.parameters, id, knob);
+        const bool frequency = tape ? (i == 0 || i == 6) : (i == 1 || i == 3);
+        knob.textFromValueFunction = [i, frequency](double value) {
+            if (frequency) return value >= 1000 ? juce::String(value / 1000, 2) + " kHz" : juce::String(value, 2) + " Hz";
+            if (i == 8) return juce::String(value, 1) + " dB";
+            return juce::String(value * 100, 0) + " %";
+        };
+        knob.valueFromTextFunction = [i, frequency](const juce::String& value) {
+            const auto number = value.getDoubleValue();
+            if (frequency) return number * (value.containsIgnoreCase("k") ? 1000 : 1);
+            return i == 8 ? number : number / 100;
+        };
+        knob.setName(tape ? tapeTitles[i] : titles[i]); knob.setTooltip(tape ? tapeHints[i] : hints[i]);
+        labels[i].setText(tape ? tapeTitles[i] : titles[i], juce::dontSendNotification);
+        auto* parameter = processor.parameters.getParameter(id);
+        knob.setDoubleClickReturnValue(true, parameter->convertFrom0to1(parameter->getDefaultValue()));
+        knob.updateText();
+    }
 }
 BatchlyEditor::~BatchlyEditor() {
     stopTimer();
@@ -172,6 +256,8 @@ BatchlyEditor::~BatchlyEditor() {
     setLookAndFeel(nullptr);
 }
 void BatchlyEditor::resized() {
+    driftTab.setBounds(12, 139, 146, 65); patinaTab.setBounds(12, 215, 146, 65);
+    moduleEnabled.setBounds(414, 19, 139, 32);
     presets.setBounds(565, 19, 210, 32); savePreset.setBounds(786, 19, 52, 32);
     loadPreset.setBounds(845, 19, 52, 32); bypass.setBounds(910, 19, 72, 32);
     knobs[0].setBounds(628, 181, 152, 163); labels[0].setBounds(628, 344, 152, 24);
@@ -197,26 +283,29 @@ void BatchlyEditor::paint(juce::Graphics& g) {
     g.setColour(accent); g.fillRect(128, 40, 5, 5);
     text(g, "A U D I O", { 26, 47, 130, 18 }, 11, muted);
     text(g, "THE COLLECTION", { 24, 104, 136, 20 }, 10, muted, true);
-    g.setColour(ink); g.fillRect(12, 139, 146, 74);
-    g.setColour(accent); g.fillRect(12, 139, 4, 74);
-    text(g, "01", { 26, 151, 30, 19 }, 11, background, true);
-    text(g, "Drift", { 26, 172, 125, 26 }, 22, background, true);
-    text(g, "CHORUS / VIBRATO", { 24, 229, 142, 18 }, 10, muted);
+    const auto rack = processor.readRackParameters();
+    text(g, "SIGNAL PATH", { 24, 315, 140, 20 }, 10, muted, true);
+    text(g, rack.driftEnabled ? "Drift  / ON" : "Drift  / OFF", { 24, 346, 140, 22 }, 13, rack.driftEnabled ? ink : muted, true);
+    text(g, "  >", { 24, 373, 140, 16 }, 11, accentText);
+    text(g, rack.patina.enabled ? "Patina / ON" : "Patina / OFF", { 24, 395, 140, 22 }, 13, rack.patina.enabled ? ink : muted, true);
+    text(g, rack.drift.bypass ? "RACK BYPASSED" : "SERIAL / 01 > 02", { 24, 439, 140, 20 }, 9, accentText);
     text(g, "LOCAL AUDIO", { 24, 561, 132, 20 }, 10, muted, true);
     text(g, "Open source", { 24, 589, 125, 20 }, 13, ink);
     text(g, "v" + juce::String(batchly::UpdateService::currentVersion), { 24, 610, 140, 18 }, 9, muted);
-    text(g, "AUDIO TOOLS / 001", { 196, 20, 340, 32 }, 11, muted);
+    text(g, shownModule == 0 ? "AUDIO TOOLS / 001" : "AUDIO TOOLS / 002", { 196, 20, 200, 32 }, 11, muted);
     g.setGradientFill(juce::ColourGradient(juce::Colour(0xffeeeceb), 192, 84, juce::Colour(0xffd4d2d0), 980, 159, false));
     g.fillRect(190, 87, 792, 70);
     for (int y = 90; y < 153; y += 3) {
         g.setColour(juce::Colours::white.withAlpha(.045f)); g.drawHorizontalLine(y, 198, 975);
     }
-    text(g, "DRIFT", { 217, 91, 190, 61 }, 48, ink, true);
+    text(g, shownModule == 0 ? "DRIFT" : "PATINA", { 211, 91, 185, 61 }, shownModule == 0 ? 48.f : 42.f, ink, true);
     g.setColour(accent); g.fillRect(396, 106, 3, 33);
-    text(g, "RANDOM-MOTION CHORUS & VIBRATO", { 420, 107, 473, 20 }, 13, ink, true);
-    text(g, "Slow movement. Soft edges. A little room to wander.", { 420, 129, 496, 18 }, 12, muted);
+    text(g, shownModule == 0 ? "RANDOM-MOTION CHORUS & VIBRATO" : "TAPE COLOR & PITCH WEAR", { 420, 107, 473, 20 }, 13, ink, true);
+    text(g, shownModule == 0 ? "Slow movement. Soft edges. A little room to wander." : "Soft edges. Warm reels. A little history in every note.", { 420, 129, 496, 18 }, 12, muted);
     screw(g, 203, 101); screw(g, 969, 101); screw(g, 203, 144); screw(g, 969, 144);
     const juce::Rectangle<float> scope(196, 184, 398, 182);
+    if (shownModule == 1) drawTapeDeck(g);
+    else {
     g.setColour(ink); g.fillRect(scope);
     g.setColour(rule); g.drawRect(scope, 1);
     text(g, "PITCH MOVEMENT", { 213, 195, 210, 20 }, 10, juce::Colour(0xffb9b6b4), true);
@@ -235,6 +324,7 @@ void BatchlyEditor::paint(juce::Graphics& g) {
         g.setColour(colour); g.strokePath(path, juce::PathStrokeType(1.6f));
     };
     drawHistory(rightHistory, background); drawHistory(leftHistory, accent); g.restoreState();
+    }
     text(g, "MOVEMENT", { 202, 380, 125, 18 }, 10, accentText, true);
     text(g, "CHARACTER", { 337, 380, 370, 18 }, 10, accentText, true);
     text(g, "IMAGE / BLEND", { 719, 380, 254, 18 }, 10, accentText, true);
@@ -246,15 +336,51 @@ void BatchlyEditor::paint(juce::Graphics& g) {
     text(g, meter < .001f ? "OUTPUT / SILENT" : "OUTPUT / " + juce::String(decibels, 1) + " dB",
          { 636, 585, 163, 16 }, 9, muted);
 }
+void BatchlyEditor::drawTapeDeck(juce::Graphics& g) {
+    g.setColour(ink); g.fillRect(196, 184, 398, 182);
+    g.setColour(rule); g.drawRect(196, 184, 398, 182);
+    text(g, "TAPE TRANSPORT", { 211, 193, 220, 20 }, 10, background);
+    const auto settings = processor.readRackParameters().patina;
+    const double effectiveRate = std::min(static_cast<double>(settings.sampleHz), processor.getSampleRate());
+    text(g, juce::String(effectiveRate / 1000, 1) + " kHz", { 501, 193, 80, 20 }, 10, juce::Colour(0xffe6b591));
+    g.setColour(juce::Colour(0xff725343));
+    g.drawLine(286, 321, 505, 321, 3); g.drawLine(286, 235, 505, 235, 2);
+    for (int reel = 0; reel < 2; ++reel) {
+        const juce::Point<float> centre(reel == 0 ? 293.f : 495.f, 279.f);
+        g.setColour(juce::Colour(0xff45342d)); g.fillEllipse(centre.x - 51, centre.y - 51, 102, 102);
+        for (int ring = 18; ring < 49; ring += 3) {
+            g.setColour(juce::Colour(0xff977460).withAlpha(.36f));
+            g.drawEllipse(centre.x - ring, centre.y - ring, ring * 2.f, ring * 2.f, 1);
+        }
+        g.setColour(juce::Colour(0xffc9c2b9)); g.drawEllipse(centre.x - 53, centre.y - 53, 106, 106, 2);
+        for (int spoke = 0; spoke < 3; ++spoke) {
+            const float angle = reelAngle + spoke * juce::MathConstants<float>::twoPi / 3 + reel * .35f;
+            const auto inner = centre.getPointOnCircumference(15, angle);
+            const auto outer = centre.getPointOnCircumference(43, angle);
+            g.setColour(juce::Colour(0xffd3cdc7)); g.drawLine({ inner, outer }, 13);
+        }
+        g.setColour(juce::Colour(0xffc9c2b9)); g.fillEllipse(centre.x - 13, centre.y - 13, 26, 26);
+        g.setColour(ink); g.fillEllipse(centre.x - 5, centre.y - 5, 10, 10);
+    }
+    g.setColour(juce::Colour(0xffa29a93)); g.fillRect(375, 301, 36, 28);
+    g.setColour(accent); g.fillRect(377, 306, 32, 3);
+    text(g, settings.enabled ? "TAPE / ENGAGED" : "TAPE / OFF", { 211, 337, 190, 19 }, 10,
+        settings.enabled ? juce::Colour(0xffe6b591) : background);
+    text(g, "STEREO COLOR", { 459, 337, 125, 19 }, 10, background);
+}
 void BatchlyEditor::timerCallback() {
+    if (shownModule != processor.selectedModule()) showModule(processor.selectedModule());
     leftHistory[historyPosition] = processor.motionLeft.load();
     rightHistory[historyPosition] = processor.motionRight.load();
     historyPosition = (historyPosition + 1) % leftHistory.size();
     meter = std::max(processor.peak.load(), meter * .9f);
+    if (meter > .001f && moduleEnabled.getToggleState() && !bypass.getToggleState())
+        reelAngle = std::fmod(reelAngle + .025f + .009f * processor.tapeMovement.load(), juce::MathConstants<float>::twoPi);
+    moduleEnabled.setButtonText((shownModule == 0 ? "DRIFT " : "PATINA ") + juce::String(moduleEnabled.getToggleState() ? "ON" : "OFF"));
     play.setEnabled(processor.loadedFile().existsAsFile() && !processor.isPlaying());
     stop.setEnabled(processor.isPlaying());
     exportButton.setEnabled(processor.loadedFile().existsAsFile() && !exporting);
-    const auto startingPoint = processor.getProgramName(processor.getCurrentProgram())
+    const auto startingPoint = processor.getProgramName(processor.getDisplayedProgram())
         + (processor.isCurrentProgramModified() ? " *" : "");
     if (presets.getText() != startingPoint) presets.setText(startingPoint, juce::dontSendNotification);
     repaint();
@@ -277,7 +403,7 @@ void BatchlyEditor::chooseAudio() {
 void BatchlyEditor::chooseExport() {
     const auto source = processor.loadedFile();
     if (!source.existsAsFile()) return;
-    chooser = std::make_unique<juce::FileChooser>("Export processed audio", source.getSiblingFile(source.getFileNameWithoutExtension() + " - Drift.wav"), "*.wav");
+    chooser = std::make_unique<juce::FileChooser>("Export processed audio", source.getSiblingFile(source.getFileNameWithoutExtension() + " - Batchly.wav"), "*.wav");
     auto safe = juce::Component::SafePointer<BatchlyEditor>(this);
     chooser->launchAsync(juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles | juce::FileBrowserComponent::warnAboutOverwriting,
         [safe, source](const juce::FileChooser& dialog) {
@@ -287,7 +413,7 @@ void BatchlyEditor::chooseExport() {
                 safe->report(juce::Result::fail("Choose the exact .wav filename so the file dialog can confirm replacement."), "");
                 return;
             }
-            const auto settings = safe->processor.readParameters();
+            const auto settings = safe->processor.readRackParameters();
             safe->exporting = true; safe->status.setText("Rendering the current settings...", juce::dontSendNotification);
             // Rendering has its own engine so exporting never blocks or changes live playback.
             safe->exportPool.addJob([safe, source, destination, settings] {
