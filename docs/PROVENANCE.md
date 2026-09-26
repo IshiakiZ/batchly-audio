@@ -88,6 +88,14 @@ Original design choices include complementary pre-color around 700 Hz, smoothed 
 
 The five presets, flame icon and static curve illustration are original. The curve drawing excludes filtering, Anchor and Trim; its label names the nearest curve anchor. Measured Input and Wet bars indicate activity. Old states retain their processing with Ember off. See `EMBER-VERIFICATION.md` for checks and limits.
 
+## Vista
+
+Horizon is used as a broad stereo-imaging reference. Its installed VST3's public host interface was read on September 26, 2026: it exposes overall and regional width, crossover pivots, generated stereo controls and mono checking. The [official Horizon page](https://cymatics.fm/products/horizon) returned a password page and was not treated as a full specification. No access controls were bypassed. No commercial code, binary internals, presets or audio assets were used.
+
+`src/VistaEngine.h` independently splits the stereo difference with complementary first-order filters. Low, middle and high differences sum to the original side signal, giving exact neutrality at unity widths without crossover phase compensation. Original generated width uses a fractional delay of high-passed mid audio minus its immediate value, injected with opposite signs into left and right. The mid signal is preserved. Controls smooth over 25 ms; delay storage is allocated only during preparation. Mono host tracks are untouched. This is a core stereo-image counterpart, not Horizon's complete mode selection, rotation or shuffle implementation.
+
+The five presets, outward-arrow icon and three-region width drawing are original. Meter bars show measured mid and side peaks. Older projects leave Vista off. See `VISTA-VERIFICATION.md` for checks and limits.
+
 ## Framework
 
 JUCE 9.0.2 is pinned to commit `72782788ce18c2d4d760b28e0921d6ffc6431102`. It supplies the GUI, audio-device management, file reading/writing, parameter management, and VST3/standalone wrappers. It does not implement Drift's effect algorithm.

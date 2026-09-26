@@ -528,5 +528,50 @@ for index,name in enumerate(("Warm foundation","Wire bass","Dense floor","Folded
     sf.write(args.output/f"{42+index:02}-ember-{name.lower().replace(' ','-')}.wav",warm.T,sr,subtype="PCM_24")
     if index==0:report["ember_render_seconds_for_9_seconds"]=time.perf_counter()-start
 report["checks"].append("Five original Ember presets render synthesized bass without clipping or residual tails")
+for sample_rate in (44100,48000,96000):
+    p=load_plugin(str(args.plugin));p.program="Mono bloom"
+    assert p.vista_enabled and not p.ember_enabled
+    t=np.arange(sample_rate)/sample_rate
+    centered=np.stack([.1*np.sin(2*np.pi*713*t)]*2).astype(np.float32)
+    wide=p(centered,sample_rate,buffer_size=257)
+    assert np.max(np.abs(wide.sum(axis=0)-centered.sum(axis=0)))<1e-6
+    assert np.sqrt(np.mean((wide[0]-wide[1])**2))>.005
+    p.vista_mix=0
+    assert np.max(np.abs(p(centered,sample_rate)-centered))<1e-6
+    p.vista_mix=1
+    assert np.max(np.abs(p(centered[:1],sample_rate)-centered[:1]))<1e-6
+    p.bypass=True
+    assert np.max(np.abs(p(centered,sample_rate)-centered))<1e-6
+    p.bypass=False
+    assert np.max(np.abs(p(np.zeros_like(centered),sample_rate)))==0
+    report["checks"].append(f"{sample_rate} Hz: Vista generated width, mono fold preservation, dry, mono host, bypass and silence")
+p.vista_low_width=.27;p.vista_high_split_hz=6200;p.vista_delay_ms=23
+accepted={n:p.parameters[n].raw_value for n in ("vista_low_width","vista_high_split_hz","vista_delay_ms")}
+earlier=("drift_enabled","patina_enabled","atrium_enabled","chime_enabled","helix_enabled","gleam_enabled","relay_enabled","forge_enabled","cinder_enabled","ember_enabled")
+for name in earlier:setattr(p,name,True)
+saved=p.raw_state;p.program="Open window";p.raw_state=saved
+assert all(abs(p.parameters[n].raw_value-v)<1e-7 for n,v in accepted.items())
+assert all(getattr(p,n) for n in (*earlier,"vista_enabled"))
+report["checks"].append("Eleven-effect rack and Vista width, crossover and delay survive state recall")
+for version in ("drift-0.1.0","patina-0.2.0","atrium-0.3.0","chime-0.4.0","helix-0.5.0","gleam-0.6.0","relay-0.7.0","forge-0.8.0","cinder-0.9.0","ember-0.10.0"):
+    p.vista_enabled=True
+    p.raw_state=(Path(__file__).resolve().parents[1]/f"tests/fixtures/{version}.bapreset").read_bytes()
+    assert not p.vista_enabled
+    if version.startswith("ember"):assert p.ember_enabled and p.cinder_enabled
+    report["checks"].append(f"Actual {version} state disables Vista and retains its saved rack")
+sr=48000;t=np.arange(sr*8)/sr
+mid=(.12*np.sin(2*np.pi*220*t)+.06*np.sin(2*np.pi*881*t))*(.6+.4*np.cos(t*2))
+side=.04*np.sin(2*np.pi*3511*t)*np.sin(t*1.7)
+stereo=np.stack((mid+side,mid-side)).astype(np.float32)
+sf.write(args.output/"47-original-stereo.wav",stereo.T,sr,subtype="PCM_24")
+for index,name in enumerate(("Open window","Centered bass","Mono bloom","Narrow room","Air frame")):
+    p=load_plugin(str(args.plugin));p.program=name
+    start=time.perf_counter();wide=p(np.pad(stereo,((0,0),(0,sr))),sr,buffer_size=257)
+    assert np.isfinite(wide).all() and np.max(np.abs(wide))<1
+    assert np.max(np.abs(wide[:,-4800:]))<1e-5
+    assert np.max(np.abs(wide[:,:len(t)].sum(axis=0)-stereo.sum(axis=0)))<1e-6
+    sf.write(args.output/f"{48+index:02}-vista-{name.lower().replace(' ','-')}.wav",wide.T,sr,subtype="PCM_24")
+    if index==0:report["vista_render_seconds_for_9_seconds"]=time.perf_counter()-start
+report["checks"].append("Five original Vista presets preserve synthesized stereo fold-down without clipping")
 (args.output / "verification.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
 print(json.dumps(report, indent=2))

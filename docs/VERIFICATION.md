@@ -1,4 +1,4 @@
-Current addition: [Ember 0.10 verification](EMBER-VERIFICATION.md). Previous addition: [Cinder 0.9 verification](CINDER-VERIFICATION.md). Earlier records below describe their tested versions.
+Current addition: [Vista 0.11 verification](VISTA-VERIFICATION.md). Previous addition: [Ember 0.10 verification](EMBER-VERIFICATION.md). Earlier records below describe their tested versions.
 
 # Drift 0.1 verification record
 

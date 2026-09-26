@@ -43,6 +43,7 @@ private:
     void drawDrums(juce::Graphics&);
     void drawTexture(juce::Graphics&);
     void drawBass(juce::Graphics&);
+    void drawStereo(juce::Graphics&);
     BatchlyProcessor& processor;
     DeckLookAndFeel look;
     std::array<juce::Slider, 9> knobs;
