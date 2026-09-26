@@ -258,5 +258,51 @@ for index, name in enumerate(("Glass strings", "Minor bells", "Copper choir", "S
     sf.write(args.output / f"{10 + index:02}-chime-{name.lower().replace(' ', '-')}.wav", ringing.T, 48000, subtype="PCM_24")
     if index == 0: report["chime_render_seconds_for_25_seconds"] = time.perf_counter() - start
 report["checks"].append("All five original Chime listening examples render with full tails and no clipping")
+for sample_rate in (44100, 48000, 96000):
+    p = load_plugin(str(args.plugin))
+    p.program = "Slow orbit"
+    assert p.helix_enabled and not p.drift_enabled and not p.patina_enabled and not p.atrium_enabled and not p.chime_enabled
+    t = np.arange(sample_rate * 2) / sample_rate
+    probe = np.stack([.15 * np.sin(2 * np.pi * 443 * t)] * 2).astype(np.float32)
+    p.helix_mix = 0
+    assert np.max(np.abs(p(probe, sample_rate) - probe)) < 1e-6
+    p.helix_mix = .5
+    phase = p(probe, sample_rate, buffer_size=137)
+    assert np.isfinite(phase).all() and np.max(np.abs(phase)) < 1
+    assert np.sqrt(np.mean((phase - probe) ** 2)) > .01
+    assert np.sqrt(np.mean((phase[0] - phase[1]) ** 2)) > .005
+    p.helix_width = 0
+    centered = p(probe, sample_rate)
+    assert np.max(np.abs(centered[0] - centered[1])) < 1e-7
+    assert p(probe[:1], sample_rate).shape == probe[:1].shape
+    p.bypass = True
+    assert np.max(np.abs(p(probe, sample_rate) - probe)) < 1e-6
+    p.bypass = False
+    assert np.max(np.abs(p(np.zeros_like(probe), sample_rate))) == 0
+    report["checks"].append(f"{sample_rate} Hz: Helix dry, phase movement, stereo, width, mono, bypass, silence")
+p.helix_feedback = -.61
+p.helix_rate_hz = 1.7
+p.drift_enabled = p.patina_enabled = p.atrium_enabled = p.chime_enabled = True
+saved = p.raw_state
+p.program = "Hollow metal"
+p.raw_state = saved
+assert abs(p.helix_feedback + .61) < .002 and abs(p.helix_rate_hz - 1.7) < .02
+assert p.helix_enabled and p.chime_enabled and p.atrium_enabled and p.patina_enabled and p.drift_enabled
+report["checks"].append("Five-module rack and signed Helix feedback survive state recall")
+for version in ("drift-0.1.0", "patina-0.2.0", "atrium-0.3.0", "chime-0.4.0"):
+    p.helix_enabled = True
+    p.raw_state = (Path(__file__).resolve().parents[1] / f"tests/fixtures/{version}.bapreset").read_bytes()
+    assert not p.helix_enabled and abs(p.helix_feedback - .35) < .002
+    if version.startswith("chime"):
+        assert p.chime_enabled and p.chime_octave == 4 and p.chime_root == "D" and p.chime_scale == "Dorian"
+    report["checks"].append(f"Actual {version} state disables Helix and retains its saved rack")
+for index, name in enumerate(("Slow orbit", "Silver sweep", "Deep current", "Retro spin", "Hollow metal")):
+    p = load_plugin(str(args.plugin)); p.program = name
+    start = time.perf_counter()
+    phase = p(np.pad(source, ((0, 0), (0, 48000 * 2))), 48000, buffer_size=512)
+    assert np.isfinite(phase).all() and np.max(np.abs(phase)) < 1
+    sf.write(args.output / f"{15 + index:02}-helix-{name.lower().replace(' ', '-')}.wav", phase.T, 48000, subtype="PCM_24")
+    if index == 0: report["helix_render_seconds_for_14_seconds"] = time.perf_counter() - start
+report["checks"].append("All five original Helix presets render with tails and no clipping")
 (args.output / "verification.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
 print(json.dumps(report, indent=2))

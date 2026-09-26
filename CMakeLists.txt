@@ -21,6 +21,9 @@ add_test(NAME atrium_dsp COMMAND atrium_tests)
 add_executable(chime_tests tests/ChimeTests.cpp)
 target_include_directories(chime_tests PRIVATE src)
 add_test(NAME chime_dsp COMMAND chime_tests)
+add_executable(helix_tests tests/HelixTests.cpp)
+target_include_directories(helix_tests PRIVATE src)
+add_test(NAME helix_dsp COMMAND helix_tests)
 
 if(BATCHLY_BUILD_APP)
     # Pin the framework so a fresh checkout builds against the same audio wrapper.
@@ -40,7 +43,7 @@ if(BATCHLY_BUILD_APP)
         PLUGIN_CODE Badr
         FORMATS VST3 Standalone
         PRODUCT_NAME "Batchly Audio"
-        DESCRIPTION "Original modulation, tape color, reverb and tuned resonance"
+        DESCRIPTION "Original modulation, tape color, reverb, tuned resonance and phasing"
         IS_SYNTH FALSE
         NEEDS_MIDI_INPUT FALSE
         NEEDS_MIDI_OUTPUT FALSE

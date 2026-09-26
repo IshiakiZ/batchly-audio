@@ -1,4 +1,4 @@
-Current addition: see [Chime 0.4 verification](CHIME-VERIFICATION.md). Earlier records below describe their tested versions.
+Current addition: see [Helix 0.5 verification](HELIX-VERIFICATION.md). Earlier records below describe their tested versions.
 
 # Drift 0.1 verification record
 
