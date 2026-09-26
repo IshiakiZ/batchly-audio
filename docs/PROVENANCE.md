@@ -62,6 +62,14 @@ The [official Illusion description](https://cymatics.fm/products/illusion-creati
 
 The five presets, repeated-block display and staggered echo icon are original. Relay follows Gleam; old states keep it off. See `RELAY-VERIFICATION.md` for checked behavior and limits.
 
+## Forge
+
+The [official Diablo features page](https://cymatics.fm/pages/diablo-features), consulted September 26, 2026, describes drum attack, sustain compression, tone, saturation, clipping and stereo shaping. It was used only to establish the musical role. No commercial source, binary internals, factory presets, graphics or processed audio were used.
+
+`src/ForgeEngine.h` independently implements linked fast/slow onset envelopes, signed attack gain, a parallel 4:1 body compressor with fixed makeup, complementary first-order tone layers at 120 Hz and 3.2 kHz, blended tanh drive, mid/side width and a linear-to-soft-knee peak curve. Tone and drive gains are refreshed every 16 samples while controls smooth over 25 ms. Fixed arrays allocate no memory during processing. The peak curve is placed after width and before dry/wet blend. It is a sample clipper, not a true-peak limiter, and the nonlinear path is not oversampled. The five presets, strike icon and envelope illustration are original.
+
+Forge covers the core drum-processing role. It does not reproduce Diablo's EQ modes, subharmonic resonator, bitcrushing modes or complete equalizer. See `FORGE-VERIFICATION.md` for checks and limits.
+
 ## Framework
 
 JUCE 9.0.2 is pinned to commit `72782788ce18c2d4d760b28e0921d6ffc6431102`. It supplies the GUI, audio-device management, file reading/writing, parameter management, and VST3/standalone wrappers. It does not implement Drift's effect algorithm.

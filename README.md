@@ -1,6 +1,6 @@
 # Batchly Audio
 
-An original open-source audio collection for Windows and VST3 hosts. Version 0.7 adds **Relay**, a moving stereo delay, alongside **Drift** chorus/vibrato, **Patina** tape coloration, **Atrium** reverb, **Chime** harmonic resonance, **Helix** stereo phasing and **Gleam** presence/air. Each effect has its own controls, illustration and sidebar icon.
+An original open-source audio collection for Windows and VST3 hosts. Version 0.8 adds **Forge**, a drum shaper, alongside **Drift** chorus/vibrato, **Patina** tape coloration, **Atrium** reverb, **Chime** harmonic resonance, **Helix** stereo phasing and **Gleam** presence/air and **Relay** moving delay. Each effect has its own controls, illustration and sidebar icon.
 
 Drift combines smooth randomized delay modulation, periodic modulation, stereo spread, an envelope-controlled low-pass filter and optional generated hiss. Its sound engine, layout, presets, graphics and demo audio were written for this project. It does not load or require a Cymatics plugin.
 
@@ -12,13 +12,13 @@ The desktop app can open or accept a dropped mono/stereo WAV, AIFF, FLAC, MP3 or
 
 ## The rack and Patina
 
-Select an effect in the sidebar, then click its **ON/OFF** button to enable or disable it. Each sidebar button shows its effect's on/off state; the collection scrolls when needed. Selecting a page only changes the controls you see; it does not change the audio routing. Audio flows through **Drift, Patina, Atrium, Chime, Helix, Gleam, then Relay**, followed by shared Output. **BYPASS** bypasses the whole rack. New instances start with Drift on, the other effects off.
+Select an effect in the sidebar, then click its **ON/OFF** button to enable or disable it. Each sidebar button shows its effect's on/off state; the collection scrolls when needed. Selecting a page only changes the controls you see; it does not change the audio routing. Audio flows through **Drift, Patina, Atrium, Chime, Helix, Gleam, Relay, then Forge**, followed by shared Output. **BYPASS** bypasses the whole rack. New instances start with Drift on, the other effects off.
 
 Patina's **Sample rate** softens high frequencies through a filtered rate reducer. **Drive** adds original soft saturation; **Wear** and **Flutter** add slow and fast pitch variation. **Hiss** generates noise, **Chorus** adds a stereo voice, **Tone** rolls off the top end, and **Mix** blends the effect. Hiss defaults to zero. Rates above the host's rate use the host rate; the tape display shows the effective rate. Its filters have finite slopes and are not brick-wall filters.
 
-Try **Fresh spool**, **Pocket cassette**, **Submerged**, **Sun-bleached**, and **Midnight dub**. The on-screen preset menu affects the displayed effect and enables it. DAW program selection recalls a single-effect starting point. Saved `.bapreset` files contain the entire rack. The wet tape path has an intentional variable delay of approximately 9-25 ms; partially wet settings can add comb coloration. The rack still reports zero latency because its dry path is immediate. With Atrium, Chime, Helix, Gleam and Relay off, exports include a 160 ms tail when Patina is enabled.
+Try **Fresh spool**, **Pocket cassette**, **Submerged**, **Sun-bleached**, and **Midnight dub**. The on-screen preset menu affects the displayed effect and enables it. DAW program selection recalls a single-effect starting point. Saved `.bapreset` files contain the entire rack. The wet tape path has an intentional variable delay of approximately 9-25 ms; partially wet settings can add comb coloration. The rack still reports zero latency because its dry path is immediate. With Atrium, Chime, Helix, Gleam, Relay and Forge off, exports include a 160 ms tail when Patina is enabled.
 
-Existing 0.1 Drift projects and presets load with Drift enabled and Patina disabled. Version 0.1 and 0.2 states both load with Atrium off. Original parameter IDs, order, plugin identity and the first thirty host program names remain unchanged.
+Existing 0.1 Drift projects and presets load with Drift enabled and Patina disabled. Version 0.1 and 0.2 states both load with Atrium off. Original parameter IDs, order, plugin identity and the first thirty-five host program names remain unchanged.
 
 ## Atrium
 
@@ -28,7 +28,7 @@ Select **Atrium**, then turn **ATRIUM OFF** on. Try **Open atrium**, **Close wal
 
 The room illustration responds to Size and the measured wet level; it is not a measured acoustic response. Size and pre-delay changes can bend the tail's pitch. Atrium is one original room algorithm with five starting points, not a physical room model or a set of sampled impulse responses.
 
-With Atrium enabled, exports reserve twice Decay, plus Pre-delay and 0.8 seconds, for the tail. The VST3 reports the same allowance to its host. A DAW can still apply its own render-tail setting. With Atrium, Chime, Helix, Gleam and Relay off, exports retain the earlier 80 ms allowance, or 160 ms when Patina is on. Processing adds no delay to the dry path.
+With Atrium enabled, exports reserve twice Decay, plus Pre-delay and 0.8 seconds, for the tail. The VST3 reports the same allowance to its host. A DAW can still apply its own render-tail setting. With Atrium, Chime, Helix, Gleam, Relay and Forge off, exports retain the earlier 80 ms allowance, or 160 ms when Patina is on. Processing adds no delay to the dry path.
 
 **Save** and **Load** store `.bapreset` files. A DAW also saves the plugin's controls in its project. The starting-point menu selects factory settings; controls can then be edited freely.
 
@@ -66,6 +66,14 @@ Select **Relay** and try **Soft answer**, **Cross town**, **Short circuit**, **L
 
 Time and Rate are free-running, without host tempo synchronization. Changing Time or using Motion deliberately changes pitch. This is an original fractional-delay design, not a circuit model, pitch sequencer or recreation of Illusion's complete feature set. Strong feedback creates long trails; the host and export tail allowance grows with Time, Motion and Feedback to cover nominal decay below -80 dB. Existing projects load with Relay off. The repeated-block illustration responds to measured left/right wet levels; its spacing is decorative rather than a timing ruler.
 
+## Forge
+
+Select **Forge** and try **First strike**, **Heavy floor**, **Snare press**, **Soft mallet**, or **Parallel iron**. **Punch** emphasizes new hits; negative values soften their attack. **Body** blends in linked compression with makeup gain for sustain. Both use a shared stereo detector, so one side does not receive a different envelope gain.
+
+**Weight** adds a broad low shelf around 120 Hz, and **Edge** lifts the region above 3.2 kHz with a gentle slope. **Drive** adds soft saturation, **Width** changes the stereo image, and **Ceiling** smoothly rounds fully wet sample peaks. **Mix** blends with the original. The clipper follows width, so widening cannot exceed the wet sample ceiling. Dry blends, downstream Output and inter-sample peaks can exceed it; this is not a true-peak limiter.
+
+The envelope drawing illustrates the Punch and Body settings. The Attack and Clip bars show measured detector and clipping activity. The design uses no lookahead, oversampling or extra processing delay; strong saturation can alias. It provides the core drum-shaping role rather than Diablo's full mode selection, resonator and multi-band EQ. Old states load with Forge off, with all earlier controls and program numbers retained. Forge adds 80 ms to the export/host tail allowance for its tone filters.
+
 ## FL Studio and other VST3 hosts
 
 For FL Studio on 64-bit Windows, copy the **entire** `Batchly Audio.vst3` folder from the package into `C:\Program Files\Common Files\VST3`. Accept Windows' administrator prompt if requested. In FL Studio, use **Options > Manage plugins**, enable **Verify plugins**, then choose **Find installed plugins**. Insert **Batchly Audio** on a mixer track. The plugin receives its audio from that track, so file-player controls only appear in the desktop app.
@@ -96,6 +104,8 @@ cmake --build build --config Release --parallel 6
 ctest --test-dir build -C Release --output-on-failure
 ./tools/verify_updater.ps1
 ```
+
+The `editor_rendering` check also renders every actual JUCE page in desktop and VST3 layouts, checks attachments and selected-sidebar visibility, and exports an original probe through the native WAV renderer. Its images and audio are in the build folder under `editor-previews`. These component checks do not replace interaction tests in a running DAW.
 
 The resulting app is in `build/BatchlyAudio_artefacts/Release/Standalone/`; the plugin bundle is in the adjacent `VST3/` directory.
 

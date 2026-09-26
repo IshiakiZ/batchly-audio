@@ -11,9 +11,10 @@ Inventory refreshed September 26, 2026 from installed VST3 filenames and public 
 5. Space Cadet-inspired stereo phasing: Helix, added in 0.5 with eight original all-pass stages, signed feedback, moving stereo notches and input coloration.
 6. Halo-inspired presence and air: Gleam, added in 0.6 with overlapping brightness bands, original excitation, peak-dependent taming and width limited to the added layer.
 7. Illusion-inspired moving delay: Relay, added in 0.7 with original fractional echoes, filtered feedback, pitch movement, time glide and stereo bouncing.
-8. Focused filter and dynamics effects: establish one small, verified module at a time.
-9. Larger multi-effect and vocal processors: only after their component effects work.
-10. Instruments and MIDI tools: separate designs and original or redistributable sound sources.
+8. Diablo-inspired drum shaping: Forge, added in 0.8 with original transient detection, parallel body compression, broad tone shelves, saturation, stereo width and soft clipping.
+9. Focused filter and dynamics effects: establish one small, verified module at a time.
+10. Larger multi-effect and vocal processors: only after their component effects work.
+11. Instruments and MIDI tools: separate designs and original or redistributable sound sources.
 
 The order after Drift is provisional. Category names below describe the installed plugin metadata, not a completed feature specification.
 
