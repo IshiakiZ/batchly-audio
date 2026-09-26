@@ -126,6 +126,19 @@ const std::array<const char*, 9> vistaHints {
     "Blend the original stereo image with Vista. Mono host tracks remain unchanged.",
     "Final gain after all effects. Widening can raise individual channel peaks."
 };
+const std::array<const char*, 9> silkIds { "silk_depth", "silk_selectivity", "silk_low", "silk_high", "silk_attack", "silk_release", "silk_trim", "silk_mix", "output" };
+const std::array<const char*, 9> silkTitles { "DEPTH", "SELECTIVITY", "LOW", "HIGH", "ATTACK", "RELEASE", "TRIM", "MIX", "OUTPUT" };
+const std::array<const char*, 9> silkHints {
+    "Maximum reduction requested at each detected resonance. Neighboring notches can overlap.",
+    "Require peaks to stand farther above nearby frequencies before reducing them. Higher values make fewer cuts.",
+    "Lower edge of the working region. Frequencies below it are gradually protected.",
+    "Upper edge of the working region. Limited by the host sample rate, with a gentle transition.",
+    "How quickly cuts deepen after detection. Detection itself averages about 12 ms of energy.",
+    "How quickly cuts relax when a resonance disappears.",
+    "Level compensation inside Silk, before its dry/wet blend.",
+    "Blend the original with the processed sound. Audition cuts isolates the removed signal at 100% mix.",
+    "Final gain after the entire rack. Keep the output meter below 0 dB."
+};
 const std::array<const char*, 9> quartzIds { "quartz_input", "quartz_low", "quartz_mid", "quartz_high", "quartz_character", "quartz_ceiling", "quartz_release", "quartz_mix", "output" };
 const std::array<const char*, 9> quartzTitles { "INPUT", "LOW", "MID", "HIGH", "CHARACTER", "CEILING", "RELEASE", "MIX", "OUTPUT" };
 const std::array<const char*, 9> quartzHints {
@@ -359,6 +372,15 @@ void DeckLookAndFeel::drawButtonText(juce::Graphics& g, juce::TextButton& button
         g.setColour(accent);g.drawLine(27,y-16,27,y+12,1.7f);
         g.drawLine(16,y-5,38,y-5,1.7f);
     }
+    if (button.getButtonText() == "Silk") {
+        for (int strand = 0; strand < 3; ++strand) {
+            juce::Path ribbon; const float offset = (strand - 1) * 7.f;
+            ribbon.startNewSubPath(17, y - 10 + offset);
+            ribbon.cubicTo(29, y - 18 + offset, 25, y + 18 + offset, 39, y + 10 + offset);
+            g.setColour(strand == 1 ? accent : colour);
+            g.strokePath(ribbon, juce::PathStrokeType(1.6f));
+        }
+    }
     g.setColour(colour); g.setFont(brandFont(18, true));
     g.drawText(button.getButtonText(), 53, 10, button.getWidth() - 58, 27, juce::Justification::centredLeft);
     const bool enabled = static_cast<bool>(button.getProperties()["effectEnabled"]);
@@ -389,6 +411,10 @@ BatchlyEditor::BatchlyEditor(BatchlyProcessor& p) : AudioProcessorEditor(p), pro
     }
     for (auto* button : { &bypass, &open, &play, &stop, &demo, &exportButton, &savePreset, &loadPreset, &updates,
                          &moduleEnabled }) addAndMakeVisible(*button);
+    silkListen.setClickingTogglesState(true);
+    silkListen.setTooltip("Hear the signal removed by Silk. Use 100% Mix to isolate the cuts; switch off to return to normal processing.");
+    addChildComponent(silkListen);
+    silkListenAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(processor.parameters, "silk_listen", silkListen);
     bypass.setClickingTogglesState(true);
     bypassAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(processor.parameters, "bypass", bypass);
     bypass.setTooltip("Bypass the whole rack and Output to compare with the original signal. Changes are faded to prevent clicks.");
@@ -457,6 +483,7 @@ void BatchlyEditor::showModule(int module) {
     else if (selectedBounds.getBottom() > viewY + collectionViewport.getViewHeight())
         collectionViewport.setViewPosition(0, selectedBounds.getBottom() - collectionViewport.getViewHeight());
     for (auto& control : tuning) control.setVisible(shownModule == 3);
+    silkListen.setVisible(shownModule == 12);
     moduleEnabled.setButtonText(juce::String(moduleNames[shownModule]).toUpperCase() + (moduleEnabled.getToggleState() ? " ON" : " OFF"));
     repaint();
 }
@@ -472,27 +499,28 @@ void BatchlyEditor::configureKnobs() {
     const bool ember = shownModule == 9;
     const bool vista = shownModule == 10;
     const bool quartz = shownModule == 11;
-    const std::array<const char*, 9>* controlIds[] { &ids, &tapeIds, &reverbIds, &chimeIds, &helixIds, &gleamIds, &relayIds, &forgeIds, &cinderIds, &emberIds, &vistaIds, &quartzIds };
-    const std::array<const char*, 9>* controlTitles[] { &titles, &tapeTitles, &reverbTitles, &chimeTitles, &helixTitles, &gleamTitles, &relayTitles, &forgeTitles, &cinderTitles, &emberTitles, &vistaTitles, &quartzTitles };
-    const std::array<const char*, 9>* controlHints[] { &hints, &tapeHints, &reverbHints, &chimeHints, &helixHints, &gleamHints, &relayHints, &forgeHints, &cinderHints, &emberHints, &vistaHints, &quartzHints };
+    const bool silk = shownModule == 12;
+    const std::array<const char*, 9>* controlIds[] { &ids, &tapeIds, &reverbIds, &chimeIds, &helixIds, &gleamIds, &relayIds, &forgeIds, &cinderIds, &emberIds, &vistaIds, &quartzIds, &silkIds };
+    const std::array<const char*, 9>* controlTitles[] { &titles, &tapeTitles, &reverbTitles, &chimeTitles, &helixTitles, &gleamTitles, &relayTitles, &forgeTitles, &cinderTitles, &emberTitles, &vistaTitles, &quartzTitles, &silkTitles };
+    const std::array<const char*, 9>* controlHints[] { &hints, &tapeHints, &reverbHints, &chimeHints, &helixHints, &gleamHints, &relayHints, &forgeHints, &cinderHints, &emberHints, &vistaHints, &quartzHints, &silkHints };
     for (size_t i = 0; i < knobs.size(); ++i) {
         attachments[i].reset();
         auto& knob = knobs[i];
         const auto id = (*controlIds[shownModule])[i];
         attachments[i] = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(processor.parameters, id, knob);
-        const bool frequency = quartz ? false : vista ? (i == 3 || i == 4) : ember ? i == 3 : cinder ? (i == 2 || i == 3) : forge ? false : relay ? (i == 2 || i == 4) : gleam ? i == 2 : helix ? (i == 0 || i == 3 || i == 4) : chime ? i == 1 : reverb ? (i == 3 || i == 4) : tape ? (i == 0 || i == 6) : (i == 1 || i == 3);
-        knob.textFromValueFunction = [i, frequency, reverb, chime, gleam, relay, forge, cinder, ember, vista, quartz](double value) {
+        const bool frequency = silk ? (i == 2 || i == 3) : quartz ? false : vista ? (i == 3 || i == 4) : ember ? i == 3 : cinder ? (i == 2 || i == 3) : forge ? false : relay ? (i == 2 || i == 4) : gleam ? i == 2 : helix ? (i == 0 || i == 3 || i == 4) : chime ? i == 1 : reverb ? (i == 3 || i == 4) : tape ? (i == 0 || i == 6) : (i == 1 || i == 3);
+        knob.textFromValueFunction = [i, frequency, reverb, chime, gleam, relay, forge, cinder, ember, vista, quartz, silk](double value) {
             if (((reverb || chime) && i == 0) || (cinder && i == 5)) return juce::String(value, 2) + " s";
-            if ((reverb && i == 2) || (relay && i == 0) || (vista && i == 6) || (quartz && i == 6)) return juce::String(value, 1) + " ms";
+            if ((reverb && i == 2) || (relay && i == 0) || (vista && i == 6) || (quartz && i == 6) || (silk && (i == 4 || i == 5))) return juce::String(value, 1) + " ms";
             if (frequency) return value >= 1000 ? juce::String(value / 1000, 2) + " kHz" : juce::String(value, 2) + " Hz";
-            if (i == 8 || (gleam && (i == 0 || i == 1 || i == 6)) || (forge && (i == 2 || i == 3 || i == 5)) || (ember && (i == 0 || i == 6)) || (quartz && (i < 4 || i == 5))) return juce::String(value, 1) + " dB";
+            if (i == 8 || (gleam && (i == 0 || i == 1 || i == 6)) || (forge && (i == 2 || i == 3 || i == 5)) || (ember && (i == 0 || i == 6)) || (quartz && (i < 4 || i == 5)) || (silk && (i == 0 || i == 6))) return juce::String(value, 1) + " dB";
             return juce::String(value * 100, 0) + " %";
         };
-        knob.valueFromTextFunction = [i, frequency, reverb, chime, gleam, relay, forge, cinder, ember, vista, quartz](const juce::String& value) {
+        knob.valueFromTextFunction = [i, frequency, reverb, chime, gleam, relay, forge, cinder, ember, vista, quartz, silk](const juce::String& value) {
             const auto number = value.getDoubleValue();
-            if ((reverb && (i == 0 || i == 2)) || (chime && i == 0) || (relay && i == 0) || (cinder && i == 5) || (vista && i == 6) || (quartz && i == 6)) return number;
+            if ((reverb && (i == 0 || i == 2)) || (chime && i == 0) || (relay && i == 0) || (cinder && i == 5) || (vista && i == 6) || (quartz && i == 6) || (silk && (i == 4 || i == 5))) return number;
             if (frequency) return number * (value.containsIgnoreCase("k") ? 1000 : 1);
-            return i == 8 || (gleam && (i == 0 || i == 1 || i == 6)) || (forge && (i == 2 || i == 3 || i == 5)) || (ember && (i == 0 || i == 6)) || (quartz && (i < 4 || i == 5)) ? number : number / 100;
+            return i == 8 || (gleam && (i == 0 || i == 1 || i == 6)) || (forge && (i == 2 || i == 3 || i == 5)) || (ember && (i == 0 || i == 6)) || (quartz && (i < 4 || i == 5)) || (silk && (i == 0 || i == 6)) ? number : number / 100;
         };
         knob.setName((*controlTitles[shownModule])[i]);
         knob.setTooltip((*controlHints[shownModule])[i]);
@@ -511,6 +539,7 @@ void BatchlyEditor::resized() {
     collectionViewport.setBounds(12, 136, 154, 354);
     collectionContent.setSize(146, batchly::moduleCount * 72 - 8);
     for (int i = 0; i < batchly::moduleCount; ++i) collectionTabs[i].setBounds(0, i * 72, 146, 64);
+    silkListen.setBounds(430, 331, 149, 25);
     tuning[0].setBounds(211, 329, 74, 25);
     tuning[1].setBounds(293, 329, 193, 25);
     tuning[2].setBounds(494, 329, 85, 25);
@@ -553,9 +582,9 @@ void BatchlyEditor::paint(juce::Graphics& g) {
     }
     text(g, juce::String(moduleNames[shownModule]).toUpperCase(), { 211, 91, 185, 61 }, shownModule == 0 ? 48.f : 42.f, ink, true);
     g.setColour(accent); g.fillRect(396, 106, 3, 33);
-    const std::array<const char*, 12> subtitles { "RANDOM-MOTION CHORUS & VIBRATO", "TAPE COLOR & PITCH WEAR", "SPACIOUS ROOMS & MOVING TAILS", "TUNED STRINGS & HARMONIC COLOR", "STEREO SWEEPS & PHASE ROTATION", "PRESENCE, AIR & SOFT BRILLIANCE", "MOVING ECHOES & STEREO RETURNS", "DRUM ATTACK, BODY & SOFT CLIPPING", "TONAL GRIT & MOVING TEXTURE", "BASS SATURATION & HARMONIC WEIGHT", "THREE-BAND WIDTH & STEREO SPACE", "BROAD TONE & LINKED PEAK CONTROL" };
-    const std::array<const char*, 12> descriptions { "Slow movement. Soft edges. A little room to wander.",
-        "Soft edges. Warm reels. A little history in every note.", "Close walls. Open halls. Give each note a place to linger.", "Strike a note. Find its colors. Let the strings answer.", "Slow circles. Deep notches. Keep the sound in motion.", "Open the top. Keep the body. Let the detail shine.", "Send it out. Let it wander. Hear it come back.", "Shape the strike. Add weight. Hold the peaks.", "Find the grain. Shape the dust. Leave a trace.", "Warm the core. Bend the curve. Keep the foundation.", "Open the sides. Keep the center. Find your space.", "Shape the balance. Round the edges. Set the finish." };
+    const std::array<const char*, 13> subtitles { "RANDOM-MOTION CHORUS & VIBRATO", "TAPE COLOR & PITCH WEAR", "SPACIOUS ROOMS & MOVING TAILS", "TUNED STRINGS & HARMONIC COLOR", "STEREO SWEEPS & PHASE ROTATION", "PRESENCE, AIR & SOFT BRILLIANCE", "MOVING ECHOES & STEREO RETURNS", "DRUM ATTACK, BODY & SOFT CLIPPING", "TONAL GRIT & MOVING TEXTURE", "BASS SATURATION & HARMONIC WEIGHT", "THREE-BAND WIDTH & STEREO SPACE", "BROAD TONE & LINKED PEAK CONTROL", "DYNAMIC RESONANCE & HARSHNESS CONTROL" };
+    const std::array<const char*, 13> descriptions { "Slow movement. Soft edges. A little room to wander.",
+        "Soft edges. Warm reels. A little history in every note.", "Close walls. Open halls. Give each note a place to linger.", "Strike a note. Find its colors. Let the strings answer.", "Slow circles. Deep notches. Keep the sound in motion.", "Open the top. Keep the body. Let the detail shine.", "Send it out. Let it wander. Hear it come back.", "Shape the strike. Add weight. Hold the peaks.", "Find the grain. Shape the dust. Leave a trace.", "Warm the core. Bend the curve. Keep the foundation.", "Open the sides. Keep the center. Find your space.", "Shape the balance. Round the edges. Set the finish.", "Find the sharp edges. Ease the peaks. Keep the texture." };
     text(g, subtitles[shownModule], { 420, 107, 473, 20 }, 13, ink, true);
     text(g, descriptions[shownModule], { 420, 129, 496, 18 }, 12, muted);
     screw(g, 203, 101); screw(g, 969, 101); screw(g, 203, 144); screw(g, 969, 144);
@@ -571,6 +600,7 @@ void BatchlyEditor::paint(juce::Graphics& g) {
     else if (shownModule == 9) drawBass(g);
     else if (shownModule == 10) drawStereo(g);
     else if (shownModule == 11) drawMastering(g);
+    else if (shownModule == 12) drawSuppression(g);
     else {
     g.setColour(ink); g.fillRect(scope);
     g.setColour(rule); g.drawRect(scope, 1);
@@ -591,9 +621,9 @@ void BatchlyEditor::paint(juce::Graphics& g) {
     };
     drawHistory(rightHistory, background); drawHistory(leftHistory, accent); g.restoreState();
     }
-    text(g, shownModule == 11 ? "BALANCE" : shownModule == 10 ? "UPPER IMAGE" : shownModule == 9 ? "TONE" : shownModule == 8 ? "BAND FOCUS" : shownModule == 7 ? "TONE" : shownModule == 6 ? "ECHO COLOR" : shownModule == 5 ? "BRIGHTNESS" : shownModule == 4 ? "RESONANCE" : shownModule == 3 ? "EXCITATION" : shownModule == 2 ? "ARRIVAL" : "MOVEMENT", { 202, 380, 125, 18 }, 10, accentText, true);
-    text(g, shownModule == 11 ? "COLOR / PEAKS" : shownModule == 10 ? "BANDS / SPACE" : shownModule == 9 ? "BODY / COLOR" : shownModule == 8 ? "COLOR / RELEASE" : shownModule == 7 ? "COLOR / PEAKS" : shownModule == 6 ? "PITCH / MOVEMENT" : shownModule == 5 ? "COLOR / CONTROL" : shownModule == 4 ? "FILTER / DRIVE" : shownModule == 3 ? "TUNING / MOTION" : shownModule == 2 ? "TONE / MOTION" : "CHARACTER", { 337, 380, 370, 18 }, 10, accentText, true);
-    text(g, shownModule == 11 ? "RECOVERY / BLEND" : "IMAGE / BLEND", { 719, 380, 254, 18 }, 10, accentText, true);
+    text(g, shownModule == 12 ? "WORKING REGION" : shownModule == 11 ? "BALANCE" : shownModule == 10 ? "UPPER IMAGE" : shownModule == 9 ? "TONE" : shownModule == 8 ? "BAND FOCUS" : shownModule == 7 ? "TONE" : shownModule == 6 ? "ECHO COLOR" : shownModule == 5 ? "BRIGHTNESS" : shownModule == 4 ? "RESONANCE" : shownModule == 3 ? "EXCITATION" : shownModule == 2 ? "ARRIVAL" : "MOVEMENT", { 202, 380, 125, 18 }, 10, accentText, true);
+    text(g, shownModule == 12 ? "DETECTION / RECOVERY" : shownModule == 11 ? "COLOR / PEAKS" : shownModule == 10 ? "BANDS / SPACE" : shownModule == 9 ? "BODY / COLOR" : shownModule == 8 ? "COLOR / RELEASE" : shownModule == 7 ? "COLOR / PEAKS" : shownModule == 6 ? "PITCH / MOVEMENT" : shownModule == 5 ? "COLOR / CONTROL" : shownModule == 4 ? "FILTER / DRIVE" : shownModule == 3 ? "TUNING / MOTION" : shownModule == 2 ? "TONE / MOTION" : "CHARACTER", { 337, 380, 370, 18 }, 10, accentText, true);
+    text(g, shownModule == 12 ? "LEVEL / BLEND" : shownModule == 11 ? "RECOVERY / BLEND" : "IMAGE / BLEND", { 719, 380, 254, 18 }, 10, accentText, true);
     g.setColour(rule); g.drawHorizontalLine(552, 195, 977);
     g.setColour(panel); g.fillRect(636, 568, 142, 12);
     const float decibels = juce::Decibels::gainToDecibels(meter, -60.0f);
@@ -835,6 +865,25 @@ void BatchlyEditor::drawStereo(juce::Graphics& g) {
     g.setColour(muted);g.fillRect(272,344,104,4);g.fillRect(460,344,104,4);
     g.setColour(accent);g.fillRect(272.f,344.f,104*juce::jlimit(0.f,1.f,processor.stereoMid.load()),4.f);
     g.fillRect(460.f,344.f,104*juce::jlimit(0.f,1.f,processor.stereoSide.load()),4.f);
+}
+void BatchlyEditor::drawSuppression(juce::Graphics& g) {
+    g.setColour(ink); g.fillRect(196, 184, 398, 182);
+    text(g, "LIVE RESONANCE CUTS", {211,193,260,20}, 10, background);
+    for (int row = 0; row < 4; ++row) {
+        g.setColour(muted.withAlpha(.4f)); g.drawHorizontalLine(227 + row * 23, 215, 578);
+    }
+    float maximum = 0;
+    for (size_t index = 0; index < processor.silkReductions.size(); ++index) {
+        const float reduction = processor.silkReductions[index].load();
+        maximum = std::max(maximum, reduction);
+        const float x = 216.f + static_cast<float>(index) * 11.3f;
+        g.setColour(accent);
+        g.fillRect(x, 227.f, 8.f, std::clamp(reduction / 18.f, 0.f, 1.f) * 69 + 1);
+    }
+    text(g, "LOW", {215,303,50,18}, 9, background);
+    text(g, "FREQUENCY", {337,303,130,18}, 9, background);
+    text(g, "HIGH", {533,303,48,18}, 9, background);
+    text(g, juce::String(maximum,1) + " dB MAX CUT", {213,334,204,19}, 10, background);
 }
 void BatchlyEditor::drawMastering(juce::Graphics& g) {
     const auto settings=processor.readRackParameters().quartz;

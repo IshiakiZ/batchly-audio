@@ -86,11 +86,31 @@ int main(int argc, char** argv) {
                             slider->setValue(slider->getValueFromText("237 ms"),juce::sendNotificationSync);
                             require(std::abs(processor.readRackParameters().quartz.releaseMs-237)<.001f,"Quartz release attachment failed");
                         }
+                        if (module == 12 && slider->getName() == "LOW") {
+                            slider->setValue(slider->getValueFromText("1.3 kHz"),juce::sendNotificationSync);
+                            require(std::abs(processor.readRackParameters().silk.lowHz-1300)<.01f,"Silk frequency conversion or attachment failed");
+                        }
+                        if (module == 12 && slider->getName() == "ATTACK") {
+                            require(formatted.contains("ms"),"Silk attack has the wrong unit");
+                            slider->setValue(slider->getValueFromText("17.5 ms"),juce::sendNotificationSync);
+                            require(std::abs(processor.readRackParameters().silk.attackMs-17.5f)<.001f,"Silk attack attachment failed");
+                        }
+                        if (module == 12 && slider->getName() == "TRIM") {
+                            slider->setValue(slider->getValueFromText("-3.2 dB"),juce::sendNotificationSync);
+                            require(std::abs(processor.readRackParameters().silk.trimDb+3.2f)<.001f,"Silk trim conversion failed");
+                        }
                     }
                     if (auto* combo = dynamic_cast<juce::ComboBox*>(child))
                         if (combo->getNumItems() == batchly::presetsPerModule && combo->getName().isEmpty()) presetMenu = combo;
                     if (auto* viewport = dynamic_cast<juce::Viewport*>(child)) collection = viewport;
                     if (auto* button = dynamic_cast<juce::TextButton*>(child)) {
+                        if (button->getButtonText() == "AUDITION CUTS") {
+                            require(button->isVisible() == (module == 12), "Silk audition shown on wrong page");
+                            if (module == 12) {
+                                button->setToggleState(true,juce::sendNotificationSync);
+                                require(processor.readRackParameters().silk.listen,"Silk audition attachment failed");
+                            }
+                        }
                         if (button->getName() == "collection") {
                             ++tabs;
                             require(static_cast<bool>(button->getProperties()["effectEnabled"]) == button->getToggleState(), "Initial sidebar status disagrees with this single-effect preset");

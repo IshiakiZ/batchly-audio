@@ -16,9 +16,10 @@ Inventory refreshed September 26, 2026 from installed VST3 filenames and public 
 10. Vortex-inspired bass saturation: Ember, added in 0.10 with four original continuously blended curves, antiderivative averaging, bias, tone shaping and bass restoration.
 11. Horizon-inspired stereo imaging: Vista, added in 0.11 with original complementary width bands, generated stereo difference and preserved mono fold-down.
 12. 24K-inspired broad mastering: Quartz, added in 0.12 with original broad tone shaping, soft character, linked sample-peak control and adjustable release.
-13. Focused filter and dynamics effects: establish one small, verified module at a time.
-14. Larger multi-effect and vocal processors: only after their component effects work.
-15. Instruments and MIDI tools: separate designs and original or redistributable sound sources.
+13. Velvet-inspired resonance suppression: Silk, added in 0.13 with original neighboring-band detection, linked dynamic cuts, protected regions and removed-signal audition.
+14. Focused filter and dynamics effects: establish one small, verified module at a time.
+15. Larger multi-effect and vocal processors: only after their component effects work.
+16. Instruments and MIDI tools: separate designs and original or redistributable sound sources.
 
 The order after Drift is provisional. Category names below describe the installed plugin metadata, not a completed feature specification.
 

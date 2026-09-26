@@ -615,5 +615,54 @@ for index,name in enumerate(("Clear finish","Warm facets","Bright polish","Dense
     sf.write(args.output/f"{54+index:02}-quartz-{name.lower().replace(' ','-')}.wav",finished.T,48000,subtype="PCM_24")
     if index==0:report["quartz_render_seconds_for_9_seconds"]=time.perf_counter()-start
 report["checks"].append("Five original Quartz presets finish an original generated mix without clipping")
+for sample_rate in (44100,48000,96000):
+    p=load_plugin(str(args.plugin));p.program="Vocal ease"
+    assert p.silk_enabled and not p.quartz_enabled
+    p.silk_depth_db=18;p.silk_selectivity=.15;p.silk_low_hz=700
+    t=np.arange(sample_rate)/sample_rate
+    source=np.stack([.2*np.sin(2*np.pi*1800*t),.05*np.sin(2*np.pi*1800*t)]).astype(np.float32)
+    p.silk_mix=0
+    assert np.max(np.abs(p(source,sample_rate)-source))<1e-6
+    p.silk_mix=1
+    reduced=p(source,sample_rate,buffer_size=257)
+    assert np.mean(reduced[0,sample_rate//2:]**2)<np.mean(source[0,sample_rate//2:]**2)*.5
+    assert np.max(np.abs(reduced[1]-reduced[0]*.25))<1e-6
+    p.silk_listen=True;removed=p(source,sample_rate,buffer_size=257)
+    assert np.max(np.abs(reduced+removed-source))<1e-6
+    p.silk_listen=False
+    assert p(source[:1],sample_rate).shape==source[:1].shape
+    p.bypass=True
+    assert np.max(np.abs(p(source,sample_rate)-source))<1e-6
+    p.bypass=False
+    assert np.max(np.abs(p(np.zeros_like(source),sample_rate)))==0
+    report["checks"].append(f"{sample_rate} Hz: Silk dry, selective resonance cuts, stereo link, removed-signal reconstruction, mono, bypass and silence")
+p.silk_trim_db=-3.2;p.silk_attack_ms=17.5;p.silk_low_hz=1300;p.silk_listen=True
+accepted={n:p.parameters[n].raw_value for n in ("silk_trim_db","silk_attack_ms","silk_low_hz","silk_listen")}
+earlier=("drift_enabled","patina_enabled","atrium_enabled","chime_enabled","helix_enabled","gleam_enabled","relay_enabled","forge_enabled","cinder_enabled","ember_enabled","vista_enabled","quartz_enabled")
+for name in earlier:setattr(p,name,True)
+saved=p.raw_state;p.program="Gentle weave";p.raw_state=saved
+assert all(getattr(p,name) for name in earlier) and p.silk_enabled
+for name,value in accepted.items():assert abs(p.parameters[name].raw_value-value)<1e-6
+report["checks"].append("Thirteen-effect rack and Silk frequency, timing, signed trim and audition survive state recall")
+for fixture in ("drift-0.1.0","patina-0.2.0","atrium-0.3.0","chime-0.4.0","helix-0.5.0","gleam-0.6.0","relay-0.7.0","forge-0.8.0","cinder-0.9.0","ember-0.10.0","vista-0.11.0","quartz-0.12.0"):
+    p.program="Cymbal calm";p.silk_listen=True
+    p.raw_state=(Path(__file__).resolve().parents[1]/"tests/fixtures"/f"{fixture}.bapreset").read_bytes()
+    assert not p.silk_enabled and not p.silk_listen
+    if fixture=="quartz-0.12.0":assert p.quartz_enabled and p.vista_enabled
+    report["checks"].append(f"Actual {fixture} state disables Silk and retains its saved rack")
+t=np.arange(48000*8)/48000
+resonance_source=(.07*np.sin(2*np.pi*180*t)+.15*np.sin(2*np.pi*1800*t)*(1+.5*np.sin(2*np.pi*.5*t))+.05*np.sin(2*np.pi*6000*t)).astype(np.float32)
+resonance_source=np.stack([resonance_source,resonance_source*.8])
+sf.write(args.output/"59-original-resonance.wav",resonance_source.T,48000,subtype="PCM_24")
+silk_start=time.perf_counter()
+for index,name in enumerate(("Gentle weave","Vocal ease","Cymbal calm","Low-mid hush","Soft fabric"),60):
+    p=load_plugin(str(args.plugin));p.program=name
+    padded=np.concatenate([resonance_source,np.zeros((2,48000),dtype=np.float32)],axis=1)
+    rendered=p(padded,48000,buffer_size=257)
+    assert np.isfinite(rendered).all() and np.max(np.abs(rendered))<.99
+    assert np.max(np.abs(rendered[:,-4800:]))<1e-6
+    sf.write(args.output/f"{index}-silk-{name.lower().replace(' ','-')}.wav",rendered.T,48000,subtype="PCM_24")
+    if index==60:report["silk_render_seconds_for_9_seconds"]=time.perf_counter()-silk_start
+report["checks"].append("Five original Silk presets reduce an original generated resonant source without clipping or a lingering tail")
 (args.output / "verification.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
 print(json.dumps(report, indent=2))

@@ -1,6 +1,6 @@
 # Batchly Audio
 
-An original open-source audio collection for Windows and VST3 hosts. Version 0.12 adds **Quartz**, broad tone shaping, soft saturation and linked peak control. It joins **Drift** chorus/vibrato, **Patina** tape coloration, **Atrium** reverb, **Chime** harmonic resonance, **Helix** stereo phasing, **Gleam** presence/air, **Relay** moving delay, **Forge** drum shaping, **Cinder** tonal/noise texture, **Ember** bass saturation and **Vista** stereo width. Each effect has its own controls, illustration and sidebar icon.
+An original open-source audio collection for Windows and VST3 hosts. Version 0.13 adds **Silk**, dynamic resonance suppression with removed-signal audition. It joins **Drift** chorus/vibrato, **Patina** tape coloration, **Atrium** reverb, **Chime** harmonic resonance, **Helix** stereo phasing, **Gleam** presence/air, **Relay** moving delay, **Forge** drum shaping, **Cinder** tonal/noise texture, **Ember** bass saturation **Vista** stereo width and **Quartz** mix finishing. Each effect has its own controls, illustration and sidebar icon.
 
 Drift combines smooth randomized delay modulation, periodic modulation, stereo spread, an envelope-controlled low-pass filter and optional generated hiss. Its sound engine, layout, presets, graphics and demo audio were written for this project. It does not load or require a Cymatics plugin.
 
@@ -12,13 +12,13 @@ The desktop app can open or accept a dropped mono/stereo WAV, AIFF, FLAC, MP3 or
 
 ## The rack and Patina
 
-Select an effect in the sidebar, then click its **ON/OFF** button to enable or disable it. Each sidebar button shows its effect's on/off state; the collection scrolls when needed. Selecting a page only changes the controls you see; it does not change the audio routing. Audio flows through **Drift, Patina, Atrium, Chime, Helix, Gleam, Relay, Forge, Cinder, Ember, Vista, then Quartz**, followed by shared Output. **BYPASS** bypasses the whole rack. New instances start with Drift on, the other effects off.
+Select an effect in the sidebar, then click its **ON/OFF** button to enable or disable it. Each sidebar button shows its effect's on/off state; the collection scrolls when needed. Selecting a page only changes the controls you see; it does not change the audio routing. Audio flows through **Drift, Patina, Atrium, Chime, Helix, Gleam, Relay, Forge, Cinder, Ember, Vista, Quartz, then Silk**, followed by shared Output. **BYPASS** bypasses the whole rack. New instances start with Drift on, the other effects off.
 
 Patina's **Sample rate** softens high frequencies through a filtered rate reducer. **Drive** adds original soft saturation; **Wear** and **Flutter** add slow and fast pitch variation. **Hiss** generates noise, **Chorus** adds a stereo voice, **Tone** rolls off the top end, and **Mix** blends the effect. Hiss defaults to zero. Rates above the host's rate use the host rate; the tape display shows the effective rate. Its filters have finite slopes and are not brick-wall filters.
 
-Try **Fresh spool**, **Pocket cassette**, **Submerged**, **Sun-bleached**, and **Midnight dub**. The on-screen preset menu affects the displayed effect and enables it. DAW program selection recalls a single-effect starting point. Saved `.bapreset` files contain the entire rack. The wet tape path has an intentional variable delay of approximately 9-25 ms; partially wet settings can add comb coloration. The rack still reports zero latency because its dry path is immediate. With Atrium, Chime, Helix, Gleam, Relay, Forge, Cinder, Ember, Vista and Quartz off, exports include a 160 ms tail when Patina is enabled.
+Try **Fresh spool**, **Pocket cassette**, **Submerged**, **Sun-bleached**, and **Midnight dub**. The on-screen preset menu affects the displayed effect and enables it. DAW program selection recalls a single-effect starting point. Saved `.bapreset` files contain the entire rack. The wet tape path has an intentional variable delay of approximately 9-25 ms; partially wet settings can add comb coloration. The rack still reports zero latency because its dry path is immediate. With Atrium, Chime, Helix, Gleam, Relay, Forge, Cinder, Ember, Vista, Quartz and Silk off, exports include a 160 ms tail when Patina is enabled.
 
-Existing 0.1 Drift projects and presets load with Drift enabled and Patina disabled. Version 0.1 and 0.2 states both load with Atrium off. Original parameter IDs, order, plugin identity and the first fifty-five host program names remain unchanged.
+Existing 0.1 Drift projects and presets load with Drift enabled and Patina disabled. Version 0.1 and 0.2 states both load with Atrium off. Original parameter IDs, order, plugin identity and the first sixty host program names remain unchanged.
 
 ## Atrium
 
@@ -28,7 +28,7 @@ Select **Atrium**, then turn **ATRIUM OFF** on. Try **Open atrium**, **Close wal
 
 The room illustration responds to Size and the measured wet level; it is not a measured acoustic response. Size and pre-delay changes can bend the tail's pitch. Atrium is one original room algorithm with five starting points, not a physical room model or a set of sampled impulse responses.
 
-With Atrium enabled, exports reserve twice Decay, plus Pre-delay and 0.8 seconds, for the tail. The VST3 reports the same allowance to its host. A DAW can still apply its own render-tail setting. With Atrium, Chime, Helix, Gleam, Relay, Forge, Cinder, Ember, Vista and Quartz off, exports retain the earlier 80 ms allowance, or 160 ms when Patina is on. Processing adds no delay to the dry path.
+With Atrium enabled, exports reserve twice Decay, plus Pre-delay and 0.8 seconds, for the tail. The VST3 reports the same allowance to its host. A DAW can still apply its own render-tail setting. With Atrium, Chime, Helix, Gleam, Relay, Forge, Cinder, Ember, Vista, Quartz and Silk off, exports retain the earlier 80 ms allowance, or 160 ms when Patina is on. Processing adds no delay to the dry path.
 
 **Save** and **Load** store `.bapreset` files. A DAW also saves the plugin's controls in its project. The starting-point menu selects factory settings; controls can then be edited freely.
 
@@ -105,6 +105,14 @@ Select **Quartz** and try **Clear finish**, **Warm facets**, **Bright polish**, 
 **Character** blends in soft saturation. Zero leaves this stage linear; higher values round stronger signals and reduce their peaks. **Ceiling** sets the fully wet sample-peak limit, and **Release** controls how quickly gain returns after a peak. Both channels share one limiter gain to preserve their relative levels. **Mix** blends the processed sound with the original.
 
 Use Mix at 100% and shared Output at 0 dB when relying on Ceiling. Dry blending, enable transitions and shared Output can exceed it. The limiter reacts immediately without lookahead and is not a true-peak limiter; strong limiting can distort transients, and nonlinear processing can alias. The display shows the three tone settings and measured gain reduction, not a frequency-response plot or loudness meter. Quartz adds 150 ms to the tail allowance and stays off in older projects.
+
+## Silk
+
+Select **Silk** and try **Gentle weave**, **Vocal ease**, **Cymbal calm**, **Low-mid hush**, or **Soft fabric**. It compares energy across 32 overlapping frequency bands, then applies stereo-linked cuts where a band stands above its neighbors. **Depth** limits the requested cut per band; overlapping bands can create a deeper combined cut. **Selectivity** raises the prominence needed to trigger a cut, so higher values affect fewer peaks.
+
+**Low** and **High** define the working region with gentle edges. **Attack** controls how quickly detected cuts deepen; detection also averages roughly 12 ms of signal energy. **Release** controls recovery. **Trim** compensates level, while **Mix** blends the result. **Audition cuts** plays the difference between input and processed audio before Trim. Set Mix to 100% and Trim to 0 dB to hear exactly what was removed. Factory presets switch audition off.
+
+The display shows actual requested reduction at each detector band, not a full spectrum or the combined frequency response. Silk adds no playback latency and reserves a one-second filter tail. It can reduce wanted tonal notes as well as unwanted resonances, so adjust Selectivity, the working region and Mix while comparing. Its fixed bands do not track arbitrary peak frequencies; this is a focused original processor without external sidechain or mid/side modes. All twelve earlier versions load with Silk and its audition off, retaining the same audio.
 
 ## FL Studio and other VST3 hosts
 
