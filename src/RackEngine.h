@@ -2,11 +2,13 @@
 #pragma once
 #include "DriftEngine.h"
 #include "PatinaEngine.h"
+#include "AtriumEngine.h"
 
 namespace batchly {
 struct RackParameters {
     DriftParameters drift;
     PatinaParameters patina;
+    AtriumParameters atrium;
     bool driftEnabled = true;
 };
 
@@ -19,6 +21,7 @@ public:
         auto driftSettings = settings.drift;
         driftSettings.outputDb = 0; driftSettings.bypass = !settings.driftEnabled;
         drift.prepare(sr, driftSettings); patina.prepare(sr, settings.patina);
+        atrium.prepare(sr, settings.atrium);
     }
     void process(float* const* audio, int channels, int samples, const RackParameters& settings) noexcept {
         if (!audio || channels < 1 || samples < 1) return;
@@ -35,6 +38,7 @@ public:
             }
             drift.process(block.data(), channels, count, driftSettings);
             patina.process(block.data(), channels, count, settings.patina);
+            atrium.process(block.data(), channels, count, settings.atrium);
             for (int i = 0; i < count; ++i) {
                 outputDb += smoothing * (safeGain(settings.drift.outputDb) - outputDb);
                 bypass += smoothing * ((settings.drift.bypass ? 1.f : 0.f) - bypass);
@@ -48,11 +52,13 @@ public:
     }
     std::array<float, 2> driftMotion() const noexcept { return drift.getModulation(); }
     std::array<float, 2> tapeMotion() const noexcept { return patina.getMovement(); }
+    float reverbPeak() const noexcept { return atrium.getWetPeak(); }
 private:
     static float safeGain(float x) noexcept { return std::isfinite(x) ? std::clamp(x, -24.f, 12.f) : 0; }
     static constexpr int capacity = 512;
     DriftEngine drift;
     PatinaEngine patina;
+    AtriumEngine atrium;
     std::array<std::array<float, capacity>, 2> dry {};
     float outputDb = 0, bypass = 0, smoothing = 0;
 };

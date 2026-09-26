@@ -35,6 +35,7 @@ private:
     void showModule(int module);
     void configureKnobs();
     void drawTapeDeck(juce::Graphics&);
+    void drawReverbRoom(juce::Graphics&);
     BatchlyProcessor& processor;
     DeckLookAndFeel look;
     std::array<juce::Slider, 9> knobs;
@@ -42,7 +43,7 @@ private:
     std::array<std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment>, 9> attachments;
     juce::TextButton bypass { "BYPASS" }, open { "Open audio" }, play { "Play" }, stop { "Stop" },
         demo { "Demo" }, exportButton { "Export WAV" }, savePreset { "Save" }, loadPreset { "Load" }, updates { "Updates" },
-        driftTab { "Drift" }, patinaTab { "Patina" }, moduleEnabled;
+        driftTab { "Drift" }, patinaTab { "Patina" }, atriumTab { "Atrium" }, moduleEnabled;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> bypassAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> moduleAttachment;
     juce::ComboBox presets;
@@ -56,5 +57,6 @@ private:
     float meter = 0;
     int shownModule = -1;
     float reelAngle = 0;
+    float reverbMeter = 0;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(BatchlyEditor)
 };

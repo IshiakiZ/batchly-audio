@@ -18,15 +18,15 @@ public:
     bool acceptsMidi() const override { return false; }
     bool producesMidi() const override { return false; }
     bool isMidiEffect() const override { return false; }
-    double getTailLengthSeconds() const override { return .16; }
-    int getNumPrograms() override { return 10; }
+    double getTailLengthSeconds() const override;
+    int getNumPrograms() override { return 15; }
     int getCurrentProgram() override { return currentProgram.load(); }
     void setCurrentProgram(int index) override;
     bool isCurrentProgramModified() const;
     int getDisplayedProgram() const;
     void setModuleProgram(int module, int index);
     int selectedModule() const { return editorModule.load(); }
-    void selectModule(int module) { editorModule.store(juce::jlimit(0, 1, module)); }
+    void selectModule(int module) { editorModule.store(juce::jlimit(0, 2, module)); }
     const juce::String getProgramName(int index) override;
     void changeProgramName(int, const juce::String&) override {}
     void getStateInformation(juce::MemoryBlock&) override;
@@ -48,16 +48,19 @@ public:
     juce::AudioProcessorValueTreeState parameters;
     std::atomic<float> peak { 0 }, motionLeft { 0 }, motionRight { 0 };
     std::atomic<float> tapeMovement { 0 };
+    std::atomic<float> reverbLevel { 0 };
 
 private:
     static juce::AudioProcessorValueTreeState::ParameterLayout makeLayout();
     std::array<std::atomic<float>*, 10> parameterValues {};
     std::array<std::atomic<float>*, 8> tapeValues {};
+    std::array<std::atomic<float>*, 8> reverbValues {};
     std::atomic<float>* driftEnabled = nullptr;
     std::atomic<float>* patinaEnabled = nullptr;
+    std::atomic<float>* atriumEnabled = nullptr;
     batchly::RackEngine engine;
     std::atomic<int> currentProgram { 0 };
-    std::atomic<int> driftProgram { 0 }, patinaProgram { 0 }, editorModule { 0 };
+    std::atomic<int> driftProgram { 0 }, patinaProgram { 0 }, atriumProgram { 0 }, editorModule { 0 };
     juce::AudioFormatManager formats;
     juce::TimeSliceThread readThread { "Audio file read-ahead" };
     std::unique_ptr<juce::AudioFormatReaderSource> readerSource;

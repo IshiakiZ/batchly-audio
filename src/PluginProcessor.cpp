@@ -4,8 +4,19 @@
 
 namespace {
 const std::array<const char*, 10> ids { "depth", "rate", "wander", "tone", "follow", "noise", "width", "mix", "output", "bypass" };
-const std::array<const char*, 10> presetNames { "Soft focus", "Slow tide", "Wide room", "Worn motor", "Pure vibrato",
-    "Fresh spool", "Pocket cassette", "Submerged", "Sun-bleached", "Midnight dub" };
+const std::array<const char*, 15> presetNames { "Soft focus", "Slow tide", "Wide room", "Worn motor", "Pure vibrato",
+    "Fresh spool", "Pocket cassette", "Submerged", "Sun-bleached", "Midnight dub",
+    "Open atrium", "Close walls", "Velvet hall", "Glass canopy", "After hours" };
+const std::array<const char*, 3> enabledIds { "drift_enabled", "patina_enabled", "atrium_enabled" };
+const std::array<const char*, 8> reverbIds { "atrium_decay", "atrium_size", "atrium_predelay", "atrium_damping",
+    "atrium_lowcut", "atrium_motion", "atrium_width", "atrium_mix" };
+const float reverbPresets[5][8] {
+    { 2.4f, .55f, 24, 6500, 120, .2f, 1, .25f },
+    { .55f, .15f, 3, 9500, 180, .05f, .65f, .2f },
+    { 4.8f, .75f, 42, 2200, 180, .3f, .9f, .32f },
+    { 3.2f, .65f, 35, 14000, 220, .55f, 1, .3f },
+    { 9, .95f, 80, 4200, 280, .8f, 1, .45f }
+};
 const std::array<const char*, 8> tapeIds { "patina_sample", "patina_drive", "patina_wear", "patina_flutter",
     "patina_hiss", "patina_chorus", "patina_tone", "patina_mix" };
 const float tapePresets[5][8] {
@@ -51,6 +62,15 @@ juce::AudioProcessorValueTreeState::ParameterLayout BatchlyProcessor::makeLayout
     add("patina_chorus", "Patina chorus", 0, 1, .18f);
     add("patina_tone", "Patina tone (Hz)", 400, 18000, 11000, .35f);
     add("patina_mix", "Patina mix", 0, 1, 1);
+    layout.add(std::make_unique<juce::AudioParameterBool>(juce::ParameterID { "atrium_enabled", 1 }, "Atrium enabled", false));
+    add("atrium_decay", "Atrium decay (s)", .2f, 12, 2.4f, .5f);
+    add("atrium_size", "Atrium size", 0, 1, .55f);
+    add("atrium_predelay", "Atrium pre-delay (ms)", 0, 250, 24, .6f);
+    add("atrium_damping", "Atrium damping (Hz)", 500, 18000, 6500, .35f);
+    add("atrium_lowcut", "Atrium low cut (Hz)", 20, 2000, 120, .35f);
+    add("atrium_motion", "Atrium motion", 0, 1, .2f);
+    add("atrium_width", "Atrium width", 0, 1, 1);
+    add("atrium_mix", "Atrium mix", 0, 1, .25f);
     return layout;
 }
 
@@ -60,8 +80,10 @@ BatchlyProcessor::BatchlyProcessor()
       parameters(*this, nullptr, "BatchlyAudioState", makeLayout()) {
     for (size_t i = 0; i < ids.size(); ++i) parameterValues[i] = parameters.getRawParameterValue(ids[i]);
     for (size_t i = 0; i < tapeIds.size(); ++i) tapeValues[i] = parameters.getRawParameterValue(tapeIds[i]);
+    for (size_t i = 0; i < reverbIds.size(); ++i) reverbValues[i] = parameters.getRawParameterValue(reverbIds[i]);
     driftEnabled = parameters.getRawParameterValue("drift_enabled");
     patinaEnabled = parameters.getRawParameterValue("patina_enabled");
+    atriumEnabled = parameters.getRawParameterValue("atrium_enabled");
     formats.registerBasicFormats();
     if (isStandalone()) getBus(true, 0)->enable(false);
 }
@@ -99,7 +121,16 @@ batchly::RackParameters BatchlyProcessor::readRackParameters() const noexcept {
     p.patina.hiss = tapeValues[4]->load(); p.patina.chorus = tapeValues[5]->load();
     p.patina.toneHz = tapeValues[6]->load(); p.patina.mix = tapeValues[7]->load();
     p.patina.enabled = patinaEnabled->load() >= .5f;
+    p.atrium.decaySeconds = reverbValues[0]->load(); p.atrium.size = reverbValues[1]->load();
+    p.atrium.preDelayMs = reverbValues[2]->load(); p.atrium.dampingHz = reverbValues[3]->load();
+    p.atrium.lowCutHz = reverbValues[4]->load(); p.atrium.motion = reverbValues[5]->load();
+    p.atrium.width = reverbValues[6]->load(); p.atrium.mix = reverbValues[7]->load();
+    p.atrium.enabled = atriumEnabled->load() >= .5f;
     return p;
+}
+double BatchlyProcessor::getTailLengthSeconds() const {
+    const auto settings = readRackParameters();
+    return settings.atrium.enabled ? batchly::AtriumEngine::tailSeconds(settings.atrium) : .16;
 }
 void BatchlyProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer&) {
     juce::ScopedNoDenormals noDenormals;
@@ -131,50 +162,55 @@ void BatchlyProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::Midi
     const auto motion = engine.driftMotion();
     motionLeft.store(motion[0]); motionRight.store(motion[1]);
     tapeMovement.store(engine.tapeMotion()[0]);
+    reverbLevel.store(engine.reverbPeak());
 }
 juce::AudioProcessorParameter* BatchlyProcessor::getBypassParameter() const { return parameters.getParameter("bypass"); }
 juce::AudioProcessorEditor* BatchlyProcessor::createEditor() { return new BatchlyEditor(*this); }
-const juce::String BatchlyProcessor::getProgramName(int index) { return presetNames[static_cast<size_t>(juce::jlimit(0, 9, index))]; }
+const juce::String BatchlyProcessor::getProgramName(int index) { return presetNames[static_cast<size_t>(juce::jlimit(0, 14, index))]; }
 void BatchlyProcessor::setCurrentProgram(int index) {
-    index = juce::jlimit(0, 9, index);
+    index = juce::jlimit(0, 14, index);
     setModuleProgram(index / 5, index % 5);
     // Host program selection recalls a complete single-effect starting point.
-    auto* other = parameters.getParameter(index < 5 ? "patina_enabled" : "drift_enabled");
-    other->setValueNotifyingHost(0);
+    for (int module = 0; module < 3; ++module)
+        if (module != index / 5) parameters.getParameter(enabledIds[module])->setValueNotifyingHost(0);
     selectModule(index / 5);
 }
 void BatchlyProcessor::setModuleProgram(int module, int index) {
     index = juce::jlimit(0, 4, index);
-    module = juce::jlimit(0, 1, module);
+    module = juce::jlimit(0, 2, module);
     const size_t count = module == 0 ? 9 : 8;
     for (size_t i = 0; i < count; ++i) {
-        auto* parameter = parameters.getParameter(module == 0 ? ids[i] : tapeIds[i]);
+        auto* parameter = parameters.getParameter(module == 0 ? ids[i] : module == 1 ? tapeIds[i] : reverbIds[i]);
         parameter->beginChangeGesture();
-        parameter->setValueNotifyingHost(parameter->convertTo0to1(module == 0 ? presets[index][i] : tapePresets[index][i]));
+        parameter->setValueNotifyingHost(parameter->convertTo0to1(module == 0 ? presets[index][i] : module == 1 ? tapePresets[index][i] : reverbPresets[index][i]));
         parameter->endChangeGesture();
     }
-    auto* enabled = parameters.getParameter(module == 0 ? "drift_enabled" : "patina_enabled");
+    auto* enabled = parameters.getParameter(enabledIds[module]);
     enabled->beginChangeGesture(); enabled->setValueNotifyingHost(1); enabled->endChangeGesture();
-    (module == 0 ? driftProgram : patinaProgram).store(index);
+    (module == 0 ? driftProgram : module == 1 ? patinaProgram : atriumProgram).store(index);
     currentProgram.store(index + module * 5);
 }
-int BatchlyProcessor::getDisplayedProgram() const { return selectedModule() == 0 ? driftProgram.load() : 5 + patinaProgram.load(); }
+int BatchlyProcessor::getDisplayedProgram() const {
+    const int module = selectedModule();
+    return module * 5 + (module == 0 ? driftProgram.load() : module == 1 ? patinaProgram.load() : atriumProgram.load());
+}
 bool BatchlyProcessor::isCurrentProgramModified() const {
     const int module = selectedModule();
     const auto index = static_cast<size_t>(getDisplayedProgram() % 5);
     for (size_t i = 0; i < (module == 0 ? 9u : 8u); ++i) {
-        const auto* parameter = parameters.getParameter(module == 0 ? ids[i] : tapeIds[i]);
-        const float expected = parameter->convertTo0to1(module == 0 ? presets[index][i] : tapePresets[index][i]);
+        const auto* parameter = parameters.getParameter(module == 0 ? ids[i] : module == 1 ? tapeIds[i] : reverbIds[i]);
+        const float expected = parameter->convertTo0to1(module == 0 ? presets[index][i] : module == 1 ? tapePresets[index][i] : reverbPresets[index][i]);
         if (std::abs(parameter->getValue() - expected) > .0001f) return true;
     }
     return false;
 }
 void BatchlyProcessor::getStateInformation(juce::MemoryBlock& data) {
     auto state = parameters.copyState();
-    state.setProperty("schemaVersion", 2, nullptr);
+    state.setProperty("schemaVersion", 3, nullptr);
     state.setProperty("program", currentProgram.load(), nullptr);
     state.setProperty("driftProgram", driftProgram.load(), nullptr);
     state.setProperty("patinaProgram", patinaProgram.load(), nullptr);
+    state.setProperty("atriumProgram", atriumProgram.load(), nullptr);
     state.setProperty("editorModule", editorModule.load(), nullptr);
     if (auto xml = state.createXml()) copyXmlToBinary(*xml, data);
 }
@@ -182,12 +218,13 @@ void BatchlyProcessor::setStateInformation(const void* data, int size) {
     if (auto xml = getXmlFromBinary(data, size)) {
         if (xml->hasTagName(parameters.state.getType())) {
             auto state = juce::ValueTree::fromXml(*xml);
-            currentProgram.store(juce::jlimit(0, 9, static_cast<int>(state.getProperty("program", 0))));
+            currentProgram.store(juce::jlimit(0, 14, static_cast<int>(state.getProperty("program", 0))));
             driftProgram.store(juce::jlimit(0, 4, static_cast<int>(state.getProperty("driftProgram", currentProgram.load() % 5))));
             patinaProgram.store(juce::jlimit(0, 4, static_cast<int>(state.getProperty("patinaProgram", 0))));
-            editorModule.store(juce::jlimit(0, 1, static_cast<int>(state.getProperty("editorModule", 0))));
+            atriumProgram.store(juce::jlimit(0, 4, static_cast<int>(state.getProperty("atriumProgram", 0))));
+            editorModule.store(juce::jlimit(0, 2, static_cast<int>(state.getProperty("editorModule", 0))));
             // Older projects have no new parameters. Restore their defaults, not the
-            // previous instance's active Patina values, when loading a legacy state.
+            // previous instance's active effects, when loading a legacy state.
             for (auto* parameter : getParameters()) {
                 if (auto* ranged = dynamic_cast<juce::RangedAudioParameter*>(parameter)) {
                     if (!state.getChildWithProperty("id", ranged->paramID).isValid()) {
@@ -242,7 +279,9 @@ juce::Result BatchlyProcessor::exportAudio(const juce::File& source, const juce:
     if (!writer) return juce::Result::fail("The WAV writer could not be created.");
     batchly::RackEngine renderEngine; renderEngine.prepare(reader->sampleRate, settings);
     juce::AudioBuffer<float> buffer(2, 4096);
-    const auto total = reader->lengthInSamples + static_cast<juce::int64>(reader->sampleRate * (settings.patina.enabled ? .16 : .08));
+    const double tail = settings.atrium.enabled ? batchly::AtriumEngine::tailSeconds(settings.atrium)
+        : settings.patina.enabled ? .16 : .08;
+    const auto total = reader->lengthInSamples + static_cast<juce::int64>(reader->sampleRate * tail);
     bool clipped = false;
     for (juce::int64 position = 0; position < total; position += 4096) {
         const auto length = static_cast<int>(std::min<juce::int64>(4096, total - position));

@@ -20,6 +20,14 @@ The functional reference is [Cymatics Origin's public product description](https
 
 The five presets and vector reel-deck artwork are original. Patina keeps Batchly's established typography and colors, with warm brown tape inside the dark transport window. `RackEngine.h` fixes the order to Drift then Patina, with shared gain and global bypass at the end. Old states are filled with defaults for new parameters, keeping Patina off when a 0.1 state is loaded.
 
+## Atrium
+
+The functional reference is the spatial processing described on [Cymatics Space Lite's public page](https://cymatics.fm/products/space-lite-plugin), consulted September 26, 2026. Atrium fills that broad reverb role with one original modulated room network and five original starting points. It does not reproduce Space's algorithms, modes, factory presets, pitch effects or artwork. No commercial source or binary internals were inspected or incorporated.
+
+The intended sound ranges from a short reflective room to a long, gently moving hall. `src/AtriumEngine.h` uses a stereo pre-delay, input high-pass and all-pass diffusion, eight fractional delay lines, an energy-preserving feedback mixing matrix, per-line decay and damping, and a mid/side width control. Delay times, modulation, gains, UI graphics and presets are project choices. Decay is a nominal low-frequency target; damping and interpolation make higher frequencies decay faster. Size and pre-delay automation deliberately move delay read positions and can bend pitch. Processing storage is allocated in preparation only.
+
+The interface uses original nested architectural frames, a room-depth illustration and an arch icon, with the collection's Batchly typography and colors. The three-effect order is Drift, Patina, Atrium. See `ATRIUM-VERIFICATION.md` for completed checks and remaining limits.
+
 ## Framework
 
 JUCE 9.0.2 is pinned to commit `72782788ce18c2d4d760b28e0921d6ffc6431102`. It supplies the GUI, audio-device management, file reading/writing, parameter management, and VST3/standalone wrappers. It does not implement Drift's effect algorithm.

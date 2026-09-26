@@ -1,6 +1,6 @@
 # Batchly Audio
 
-An original open-source audio collection for Windows and VST3 hosts. Version 0.2 adds **Patina**, a tape/lo-fi effect, alongside **Drift**, a stereo chorus/vibrato effect. The other effects in the collection are future work.
+An original open-source audio collection for Windows and VST3 hosts. Version 0.3 adds **Atrium**, a spacious stereo reverb, alongside **Drift**, a chorus/vibrato effect, and **Patina**, a tape/lo-fi processor. Each effect has its own controls, illustration and sidebar icon.
 
 Drift combines smooth randomized delay modulation, periodic modulation, stereo spread, an envelope-controlled low-pass filter and optional generated hiss. Its sound engine, layout, presets, graphics and demo audio were written for this project. It does not load or require a Cymatics plugin.
 
@@ -8,17 +8,27 @@ Drift combines smooth randomized delay modulation, periodic modulation, stereo s
 
 Open `Batchly Audio.exe` in the Windows package, then click **Demo**. Choose **Soft focus** or **Pure vibrato**, adjust **Depth**, and toggle **Bypass** to compare. **Mix** near 50% blends the dry sound into a chorus; 100% wet produces vibrato.
 
-The desktop app can open or accept a dropped mono/stereo WAV, AIFF, FLAC, MP3 or Ogg file. Click **Play**, adjust the effect, and use **Export WAV** to create a stereo 24-bit WAV at the source sample rate. Export includes 80 ms for the effect tail and refuses to save clipped output. The desktop app plays files and its demo; it does not monitor the microphone. Use your DAW for live recording through the VST3.
+The desktop app can open or accept a dropped mono/stereo WAV, AIFF, FLAC, MP3 or Ogg file. Click **Play**, adjust the effects, and use **Export WAV** to create a stereo 24-bit WAV at the source sample rate. Export includes the effect tail and refuses to save clipped output. The desktop app plays files and its demo; it does not monitor the microphone. Use your DAW for live recording through the VST3.
 
-## Patina and the two-effect rack
+## Patina and the rack
 
-Select **Patina** in the sidebar, then click **PATINA OFF** to switch it on. To hear Patina alone, select Drift and switch **DRIFT ON** off first. The sidebar always shows both effects' on/off states. Selecting a page only changes the controls you see; it does not change the audio routing. Audio flows through **Drift, then Patina**, followed by the shared Output control. **BYPASS** bypasses the whole rack.
+Select an effect in the sidebar, then click its **ON/OFF** button to enable or disable it. The sidebar always shows all three effects' states. Selecting a page only changes the controls you see; it does not change the audio routing. Audio flows through **Drift, then Patina, then Atrium**, followed by shared Output. **BYPASS** bypasses the whole rack. New instances start with Drift on, Patina and Atrium off.
 
 Patina's **Sample rate** softens high frequencies through a filtered rate reducer. **Drive** adds original soft saturation; **Wear** and **Flutter** add slow and fast pitch variation. **Hiss** generates noise, **Chorus** adds a stereo voice, **Tone** rolls off the top end, and **Mix** blends the effect. Hiss defaults to zero. Rates above the host's rate use the host rate; the tape display shows the effective rate. Its filters have finite slopes and are not brick-wall filters.
 
 Try **Fresh spool**, **Pocket cassette**, **Submerged**, **Sun-bleached**, and **Midnight dub**. The on-screen preset menu affects the displayed effect and enables it. DAW program selection recalls a single-effect starting point. Saved `.bapreset` files contain the entire rack. The wet tape path has an intentional variable delay of approximately 9-25 ms; partially wet settings can add comb coloration. The rack still reports zero latency because its dry path is immediate. Exports include a 160 ms tail when Patina is enabled.
 
-Existing 0.1 Drift projects and presets load with Drift enabled and Patina disabled. Original parameter IDs, plugin identity and the first five host program names remain unchanged.
+Existing 0.1 Drift projects and presets load with Drift enabled and Patina disabled. Version 0.1 and 0.2 states both load with Atrium off. Original parameter IDs, order, plugin identity and the first ten host program names remain unchanged.
+
+## Atrium
+
+Select **Atrium**, then turn **ATRIUM OFF** on. Try **Open atrium**, **Close walls**, **Velvet hall**, **Glass canopy**, or **After hours**. For reverb alone, turn Drift and Patina off. For a send/return track, set Atrium's **Mix** to 100%.
+
+**Decay** controls the nominal low-frequency fade from 0.2 to 12 seconds. **Size** changes reflection spacing, from a compact room to an open hall. **Pre-delay** leaves up to 250 ms before the room responds. **Damping** makes the high frequencies fade faster; **Low cut** keeps bass out of the wet room. **Motion** gently modulates the reflection paths. **Width** narrows the wet signal to mono at zero, and **Mix** blends it with the unchanged dry path. Mono tracks remain mono.
+
+The room illustration responds to Size and the measured wet level; it is not a measured acoustic response. Size and pre-delay changes can bend the tail's pitch. Atrium is one original room algorithm with five starting points, not a physical room model or a set of sampled impulse responses.
+
+With Atrium enabled, exports reserve twice Decay, plus Pre-delay and 0.8 seconds, for the tail. The VST3 reports the same allowance to its host. A DAW can still apply its own render-tail setting. With Atrium off, exports retain the earlier 80 ms allowance, or 160 ms when Patina is on. Processing adds no delay to the dry path.
 
 **Save** and **Load** store `.bapreset` files. A DAW also saves the plugin's controls in its project. The starting-point menu selects factory settings; controls can then be edited freely.
 
