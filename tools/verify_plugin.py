@@ -391,5 +391,59 @@ for index,name in enumerate(("Soft answer","Cross town","Short circuit","Long re
     sf.write(args.output/f"{25+index:02}-relay-{name.lower().replace(' ','-')}.wav",echoes.T,48000,subtype="PCM_24")
     if index == 0: report["relay_render_seconds_for_37_seconds"] = time.perf_counter()-start
 report["checks"].append("Five original Relay presets render with decayed tails and no clipping")
+# Original drum probes exercise Forge through the real VST3 wrapper.
+for sample_rate in (44100,48000,96000):
+    p=load_plugin(str(args.plugin));p.program="First strike"
+    assert p.forge_enabled and not any(getattr(p,n) for n in ("drift_enabled","patina_enabled","atrium_enabled","chime_enabled","helix_enabled","gleam_enabled","relay_enabled"))
+    t=np.arange(sample_rate)/sample_rate
+    hit=(.18*np.exp(-np.fmod(t,.25)*20)*np.sin(2*np.pi*600*t)).astype(np.float32)
+    probe=np.stack((hit,hit*.7))
+    p.forge_mix=0
+    assert np.max(np.abs(p(probe,sample_rate)-probe))<1e-6
+    p.forge_mix=1
+    shaped=p(probe,sample_rate,buffer_size=137)
+    assert np.isfinite(shaped).all() and np.sqrt(np.mean((shaped-probe)**2))>.005
+    p.forge_width=0
+    centered=p(probe,sample_rate)
+    assert np.max(np.abs(centered[0]-centered[1]))<1e-7
+    p.forge_ceiling_db=-6
+    loud=p(probe*20,sample_rate)
+    assert np.max(np.abs(loud))<=10**(float(p.forge_ceiling_db)/20)+1e-6
+    assert p(probe[:1],sample_rate).shape==probe[:1].shape
+    p.bypass=True
+    assert np.max(np.abs(p(probe,sample_rate)-probe))<1e-6
+    p.bypass=False
+    assert np.max(np.abs(p(np.zeros_like(probe),sample_rate)))==0
+    report["checks"].append(f"{sample_rate} Hz: Forge dry, drum shaping, width, ceiling, mono, bypass, silence")
+p.forge_punch=-.63;p.forge_ceiling_db=-4.7
+accepted={n:p.parameters[n].raw_value for n in ("forge_punch","forge_ceiling_db")}
+for name in ("drift_enabled","patina_enabled","atrium_enabled","chime_enabled","helix_enabled","gleam_enabled","relay_enabled"):setattr(p,name,True)
+saved=p.raw_state;p.program="Snare press";p.raw_state=saved
+assert all(abs(p.parameters[n].raw_value-v)<1e-7 for n,v in accepted.items())
+assert all(getattr(p,n) for n in ("drift_enabled","patina_enabled","atrium_enabled","chime_enabled","helix_enabled","gleam_enabled","relay_enabled","forge_enabled"))
+report["checks"].append("Eight-effect rack, signed Punch and Ceiling survive state recall")
+for version in ("drift-0.1.0","patina-0.2.0","atrium-0.3.0","chime-0.4.0","helix-0.5.0","gleam-0.6.0","relay-0.7.0"):
+    p.forge_enabled=True
+    p.raw_state=(Path(__file__).resolve().parents[1]/f"tests/fixtures/{version}.bapreset").read_bytes()
+    assert not p.forge_enabled and abs(p.forge_punch-.3)<.002
+    if version.startswith("relay"):assert p.relay_enabled and p.gleam_enabled
+    report["checks"].append(f"Actual {version} state disables Forge and retains its saved rack")
+# All audio is synthesized here: pitched kick, noise snare and short hats.
+sr=48000;t=np.arange(sr*8)/sr;rng=np.random.default_rng(808)
+kick_time=np.fmod(t,.5);snare_time=np.fmod(t+.25,.5);hat_time=np.fmod(t,.125)
+kick=.24*np.exp(-kick_time*18)*np.sin(2*np.pi*(52*kick_time+7*(1-np.exp(-kick_time*45))))
+noise=rng.normal(0,1,len(t))
+snare=.1*np.exp(-snare_time*35)*(noise*.7+np.sin(2*np.pi*180*t)*.3)
+hat=.025*np.exp(-hat_time*130)*(noise-np.roll(noise,1))
+drums=np.stack((kick+snare+hat,kick+snare+hat*.7)).astype(np.float32)
+sf.write(args.output/"30-original-drums.wav",drums.T,sr,subtype="PCM_24")
+for index,name in enumerate(("First strike","Heavy floor","Snare press","Soft mallet","Parallel iron")):
+    p=load_plugin(str(args.plugin));p.program=name
+    start=time.perf_counter();shaped=p(np.pad(drums,((0,0),(0,sr))),sr,buffer_size=257)
+    assert np.isfinite(shaped).all() and np.max(np.abs(shaped))<1
+    assert np.max(np.abs(shaped[:,-sr//2:]))<1e-7
+    sf.write(args.output/f"{31+index:02}-forge-{name.lower().replace(' ','-')}.wav",shaped.T,sr,subtype="PCM_24")
+    if index==0:report["forge_render_seconds_for_9_seconds"]=time.perf_counter()-start
+report["checks"].append("Five Forge presets render original drums without clipping or residual tails")
 (args.output / "verification.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
 print(json.dumps(report, indent=2))

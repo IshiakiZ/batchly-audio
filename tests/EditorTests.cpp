@@ -36,6 +36,15 @@ int main(int argc, char** argv) {
                             slider->setValue(slider->getValue()+37,juce::sendNotificationSync);
                             require(std::abs(processor.readRackParameters().relay.timeMs-slider->getValue()) < .01, "Relay time control is disconnected");
                         }
+                        if (module == 7 && slider->getName() == "PUNCH") {
+                            slider->setValue(slider->getValueFromText("-63 %"),juce::sendNotificationSync);
+                            require(std::abs(processor.readRackParameters().forge.punch+.63f)<.0001f,"Signed Forge Punch control is disconnected");
+                        }
+                        if (module == 7 && slider->getName() == "CEILING") {
+                            require(formatted.contains("dB"),"Forge ceiling has the wrong unit");
+                            slider->setValue(slider->getValueFromText("-4.7 dB"),juce::sendNotificationSync);
+                            require(std::abs(processor.readRackParameters().forge.ceilingDb+4.7f)<.0001f,"Forge Ceiling control is disconnected");
+                        }
                     }
                     if (auto* combo = dynamic_cast<juce::ComboBox*>(child))
                         if (combo->getNumItems() == batchly::presetsPerModule && combo->getName().isEmpty()) presetMenu = combo;
@@ -84,7 +93,7 @@ int main(int argc, char** argv) {
                 }
             }
         }
-        std::cout << "PASS: all native pages render offscreen; controls fit; selected icons are visible; preset callbacks and Relay time attachment work\n";
+        std::cout << "PASS: native pages render; controls fit; selected icons are visible; preset callbacks, time, signed Punch and Ceiling attachments work\n";
         return 0;
     } catch (const std::exception& e) { std::cerr << "FAIL: " << e.what() << '\n'; return 1; }
 }
