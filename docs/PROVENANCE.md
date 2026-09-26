@@ -28,6 +28,16 @@ The intended sound ranges from a short reflective room to a long, gently moving 
 
 The interface uses original nested architectural frames, a room-depth illustration and an arch icon, with the collection's Batchly typography and colors. The three-effect order is Drift, Patina, Atrium. See `ATRIUM-VERIFICATION.md` for completed checks and remaining limits.
 
+## Chime
+
+Gamma's installed VST3 exposes a harmonic resonator control surface: root, scale, scale degrees, octave range, ringing/decay and modulation. Its public host parameter names were inspected on September 26, 2026. The [official Gamma Lite page](https://cymatics.fm/products/gamma-lite) returned the site's password page, so it was not used as a full specification. No protection was bypassed and no binary internals or commercial source were read. Public host metadata is interface information, not a copied implementation.
+
+`src/ChimeEngine.h` independently implements fourteen damped complex rotations, arranged as seven possible scale degrees in two registers. Six scale choices, energy-scaled excitation, input saturation, per-voice stereo positioning, gentle detuning/motion and an output low-pass provide the musical behavior. Complex rotation contracts the state each sample, keeping rapid retuning stable. Tuning and controls are smoothed; processing uses fixed arrays without allocation. The output saturation bounds resonant peaks. This is a core harmonic-resonance counterpart, not a recreation of Gamma's MIDI, arpeggiator, drone or spectral-selection features.
+
+The five preset settings, tuned-string illustration and hanging-bar icon are original. Chime follows Atrium in the fixed rack. Existing states default Chime to off. The collection navigation now scrolls and displays each effect's state on its button. `ModuleCatalog.h` centralizes the existing program names and values without changing the first fifteen programs.
+
+See `CHIME-VERIFICATION.md` for completed checks and limits.
+
 ## Framework
 
 JUCE 9.0.2 is pinned to commit `72782788ce18c2d4d760b28e0921d6ffc6431102`. It supplies the GUI, audio-device management, file reading/writing, parameter management, and VST3/standalone wrappers. It does not implement Drift's effect algorithm.

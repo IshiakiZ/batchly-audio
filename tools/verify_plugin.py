@@ -204,5 +204,59 @@ rack = p(room_source, 48000, buffer_size=512)
 assert np.isfinite(rack).all() and np.max(np.abs(rack)) < 1
 sf.write(args.output / "09-drift-patina-atrium.wav", rack.T, 48000, subtype="PCM_24")
 report["checks"].append("Atrium and full-rack listening examples with tails render without clipping")
+# Exercise the new modal bank through the public VST3 parameter interface.
+for sample_rate in (44100, 48000, 96000):
+    p = load_plugin(str(args.plugin))
+    p.program = "Glass strings"
+    assert p.chime_enabled and not p.drift_enabled and not p.patina_enabled and not p.atrium_enabled
+    impulse = np.zeros((2, sample_rate * 3), dtype=np.float32)
+    impulse[:, 0] = .5
+    p.chime_mix = 0
+    assert np.max(np.abs(p(impulse, sample_rate) - impulse)) < 1e-6
+    p.chime_mix = 1
+    ringing = p(impulse, sample_rate, buffer_size=137)
+    assert np.isfinite(ringing).all() and np.max(np.abs(ringing)) < 1
+    assert np.sum(ringing[:, sample_rate // 10:] ** 2) > 1e-7
+    assert np.sum((ringing[0] - ringing[1]) ** 2) > 1e-7
+    p.chime_width = 0
+    centered = p(impulse, sample_rate)
+    assert np.array_equal(centered[0], centered[1])
+    assert p(impulse[:1], sample_rate).shape == impulse[:1].shape
+    p.bypass = True
+    assert np.max(np.abs(p(impulse, sample_rate) - impulse)) < 1e-6
+    p.bypass = False
+    assert np.max(np.abs(p(np.zeros_like(impulse), sample_rate))) == 0
+    report["checks"].append(f"{sample_rate} Hz: Chime dry, stereo ring, width, mono, bypass, silence")
+
+p.chime_root = "D"
+p.chime_scale = "Dorian"
+p.chime_octave = 4
+p.chime_ring_s = 3.1
+p.drift_enabled = p.patina_enabled = p.atrium_enabled = True
+saved = p.raw_state
+p.program = "Minor bells"
+p.raw_state = saved
+assert p.chime_root == "D" and p.chime_scale == "Dorian" and p.chime_octave == 4
+assert abs(p.chime_ring_s - 3.1) < .02
+assert p.chime_enabled and p.drift_enabled and p.patina_enabled and p.atrium_enabled
+report["checks"].append("Four-module rack, key, scale, octave and ring survive state recall")
+for version in ("drift-0.1.0", "patina-0.2.0", "atrium-0.3.0"):
+    p.chime_enabled = True
+    p.raw_state = (Path(__file__).resolve().parents[1] / f"tests/fixtures/{version}.bapreset").read_bytes()
+    assert not p.chime_enabled and abs(p.chime_ring_s - 1.6) < .02
+    if version.startswith("atrium"):
+        assert p.drift_enabled and p.patina_enabled and p.atrium_enabled
+        assert abs(p.atrium_decay_s - 4.33) < .02
+    report["checks"].append(f"Actual {version} state disables Chime and retains its saved rack")
+
+for index, name in enumerate(("Glass strings", "Minor bells", "Copper choir", "Small music box", "Suspended air")):
+    p = load_plugin(str(args.plugin))
+    p.program = name
+    start = time.perf_counter()
+    ringing = p(np.pad(source, ((0, 0), (0, 48000 * 13))), 48000, buffer_size=512)
+    assert np.isfinite(ringing).all() and np.max(np.abs(ringing)) < 1
+    sf.write(args.output / f"{10 + index:02}-chime-{name.lower().replace(' ', '-')}.wav", ringing.T, 48000, subtype="PCM_24")
+    if index == 0: report["chime_render_seconds_for_25_seconds"] = time.perf_counter() - start
+report["checks"].append("All five original Chime listening examples render with full tails and no clipping")
 (args.output / "verification.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
 print(json.dumps(report, indent=2))
