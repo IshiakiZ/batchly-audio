@@ -1,0 +1,9 @@
+/build/
+/build-dsp/
+/vendor/
+/dist/
+/local-research/
+*.user
+*.suo
+.vs/
+__pycache__/

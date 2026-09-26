@@ -1,0 +1,62 @@
+# Installed references and build order
+
+Inventory refreshed September 26, 2026 from installed VST3 filenames and public module metadata. Installation does not establish every product entitlement or activation state. None of these binaries is bundled with Batchly Audio.
+
+## Initial order
+
+1. Memory-inspired chorus/vibrato: Drift, the first local preview.
+2. Origin-style tape coloration: add independently implemented resampling and saturation after Drift is evaluated.
+3. Focused delay, filter and spatial effects: establish one small, verified module at a time.
+4. Larger multi-effect and vocal processors: only after their component effects work.
+5. Instruments and MIDI tools: separate designs and original or redistributable sound sources.
+
+The order after Drift is provisional. Category names below describe the installed plugin metadata, not a completed feature specification.
+
+## 36 installed plugins
+
+| Reference | Category | Version | Evidence |
+|---|---|---|---|
+| 24K | Fx, Mastering | 1.4.0 | Installed VST3 metadata |
+| Corrosion | Fx | 1.0.4 | Installed VST3 metadata |
+| Dark Sky | Fx | 1.1.2 | Installed VST3 metadata |
+| Daydream | Instrument, Synth | 1.0.0 | Installed VST3 metadata |
+| Deja Vu | Pending individual research | Not recorded | Installed file |
+| Diablo | Fx | 1.1.0 | Installed VST3 metadata |
+| Dreamscape | Fx | 1.1.1 | Installed VST3 metadata |
+| Entity | Fx | 1.0.0 | Installed VST3 metadata |
+| Galaxy | Instrument, Sampler | 0.1.5 | Installed VST3 metadata |
+| GAMEOVER | Instrument, Synth, Sampler | 1.0.1 | Installed VST3 metadata |
+| Gamma | Fx, Filter | 1.0.0 | Installed VST3 metadata |
+| Halo | Effect | Not recorded | Empty metadata file; earlier host probe only |
+| Horizon | Fx | 1.0.0 | Installed VST3 metadata |
+| Illusion | Effect | Not recorded | Earlier host probe; category needs current confirmation |
+| Invader Lite | Instrument, Synth | 1.0.1 | Installed VST3 metadata |
+| Memory | Effect | Not recorded | Earlier host probe; category needs current confirmation |
+| MIDI Shredder | Fx, Tools | 1.0.0 | Installed VST3 metadata |
+| Mix Link | Fx | 1.1.1 | Installed VST3 metadata |
+| Neptune Lite | Fx | 1.0.0 | Installed VST3 metadata |
+| Night Drive | Instrument, Synth | 1.0.0 | Installed VST3 metadata |
+| Occular | Fx | 1.0.0 | Installed VST3 metadata |
+| Ocean Pluck | Instrument | 1.1.0 | Installed VST3 metadata |
+| Omnivox | Fx, Pitch Shift | 1.1.0 | Installed VST3 metadata |
+| Origin | Effect | Not recorded | Earlier host probe; category needs current confirmation |
+| Pandora | Instrument | Not recorded | Earlier host probe; category needs current confirmation |
+| Pluto | Effect | Not recorded | Earlier host probe; category needs current confirmation |
+| Quake | Instrument | 1.1.0 | Installed VST3 metadata |
+| Shifter | Fx, Pitch Shift | 1.0.0 | Installed VST3 metadata |
+| Shockwave | Instrument, Pitch Shift | 1.0.0 | Installed VST3 metadata |
+| Sketch | Instrument, Synth | 1.0.1 | Installed VST3 metadata |
+| Space Cadet | Fx | 1.0.0 | Installed VST3 metadata |
+| Space | Fx, Reverb | 1.1.0 | Installed VST3 metadata |
+| Vanish | Fx, Reverb | 1.0.5 | Installed VST3 metadata |
+| Velvet | Fx | 1.0.0 | Installed VST3 metadata |
+| Vortex | Fx | 1.1.0 | Installed VST3 metadata |
+| Voxity | Fx | 1.1.0 | Installed VST3 metadata |
+
+## Distribution
+
+Target: Windows desktop app plus a VST3 rack using the same original engines. Source is prepared for GitHub. Batchly downloads and any browser-hosted processing remain deferred until the owner decides.
+
+## Visual direction
+
+Keep Batchly's light ground, dark ink, signal red, Archivo headings, monospace labels and straight-edged collection frame consistent. Give each processor a distinct instrument surface: brushed silver and drifting curves for Drift, worn tape hardware for tape coloration, industrial controls for distortion, and spacious displays for reverbs. Keep the large tactile knobs and clear visual feedback associated with studio plugins. All artwork, layouts and assets remain original or openly licensed.

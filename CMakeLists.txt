@@ -1,0 +1,57 @@
+cmake_minimum_required(VERSION 3.22)
+file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" BATCHLY_RELEASE_VERSION LIMIT_COUNT 1)
+string(REGEX REPLACE "-.*$" "" BATCHLY_BASE_VERSION "${BATCHLY_RELEASE_VERSION}")
+project(BatchlyAudio VERSION ${BATCHLY_BASE_VERSION} LANGUAGES C CXX)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+# Keep the Windows download self-contained, without a separate C++ runtime installer.
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+
+option(BATCHLY_BUILD_APP "Build the app and VST3 as well as DSP tests" ON)
+enable_testing()
+add_executable(drift_tests tests/DriftTests.cpp)
+target_include_directories(drift_tests PRIVATE src)
+add_test(NAME drift_dsp COMMAND drift_tests)
+
+if(BATCHLY_BUILD_APP)
+    # Pin the framework so a fresh checkout builds against the same audio wrapper.
+    include(FetchContent)
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/vendor/JUCE/CMakeLists.txt")
+        add_subdirectory(vendor/JUCE EXCLUDE_FROM_ALL)
+    else()
+        FetchContent_Declare(JUCE
+            GIT_REPOSITORY https://github.com/juce-framework/JUCE.git
+            GIT_TAG 72782788ce18c2d4d760b28e0921d6ffc6431102)
+        FetchContent_MakeAvailable(JUCE)
+    endif()
+    juce_add_plugin(BatchlyAudio
+        COMPANY_NAME "Batchly"
+        BUNDLE_ID "com.batchly.audio"
+        PLUGIN_MANUFACTURER_CODE Btch
+        PLUGIN_CODE Badr
+        FORMATS VST3 Standalone
+        PRODUCT_NAME "Batchly Audio"
+        DESCRIPTION "Drift - original chorus and vibrato"
+        IS_SYNTH FALSE
+        NEEDS_MIDI_INPUT FALSE
+        NEEDS_MIDI_OUTPUT FALSE
+        IS_MIDI_EFFECT FALSE
+        EDITOR_WANTS_KEYBOARD_FOCUS FALSE
+        COPY_PLUGIN_AFTER_BUILD FALSE
+        VST3_CATEGORIES Fx Modulation
+        NEEDS_WEB_BROWSER FALSE
+        NEEDS_CURL FALSE)
+    juce_add_binary_data(BatchlyFonts SOURCES assets/Archivo.ttf assets/JetBrainsMono.ttf tools/apply-update.ps1)
+    target_sources(BatchlyAudio PRIVATE src/PluginProcessor.cpp src/PluginEditor.cpp src/UpdateService.cpp)
+    target_compile_definitions(BatchlyAudio PUBLIC
+        JUCE_WEB_BROWSER=0 JUCE_USE_CURL=0 JUCE_VST3_CAN_REPLACE_VST2=0
+        "BATCHLY_RELEASE_VERSION=\"${BATCHLY_RELEASE_VERSION}\"")
+    target_link_libraries(BatchlyAudio PRIVATE juce::juce_audio_utils juce::juce_cryptography BatchlyFonts
+        PUBLIC juce::juce_recommended_config_flags)
+    add_executable(update_tests tests/UpdateTests.cpp src/UpdateService.cpp)
+    target_include_directories(update_tests PRIVATE src)
+    target_compile_definitions(update_tests PRIVATE JUCE_USE_CURL=0 JUCE_WEB_BROWSER=0
+        "BATCHLY_RELEASE_VERSION=\"${BATCHLY_RELEASE_VERSION}\"")
+    target_link_libraries(update_tests PRIVATE juce::juce_core juce::juce_cryptography BatchlyFonts)
+    add_test(NAME update_validation COMMAND update_tests)
+endif()
