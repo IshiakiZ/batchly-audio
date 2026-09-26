@@ -6,9 +6,10 @@ Inventory refreshed September 26, 2026 from installed VST3 filenames and public 
 
 1. Memory-inspired chorus/vibrato: Drift, released in 0.1.
 2. Origin-style tape coloration: Patina, added in 0.2 with original filtered rate reduction, saturation, wear/flutter, generated hiss and chorus.
-3. Focused delay, filter and spatial effects: establish one small, verified module at a time.
-4. Larger multi-effect and vocal processors: only after their component effects work.
-5. Instruments and MIDI tools: separate designs and original or redistributable sound sources.
+3. Space-inspired spatial processing: Atrium, added in 0.3 with an original modulated room network, decay, pre-delay, damping, low cut and width.
+4. Focused delay and filter effects: establish one small, verified module at a time.
+5. Larger multi-effect and vocal processors: only after their component effects work.
+6. Instruments and MIDI tools: separate designs and original or redistributable sound sources.
 
 The order after Drift is provisional. Category names below describe the installed plugin metadata, not a completed feature specification.
 

@@ -120,9 +120,10 @@ assert abs(p.patina_wear - .71) < .002 and p.patina_enabled and p.drift_enabled
 report["checks"].append("Two-module rack and Patina controls survive state recall")
 
 # Captured from the released 0.1.0 plugin, with Depth 61% and Mix 42%.
+p.atrium_enabled = True
 p.raw_state = (Path(__file__).resolve().parents[1] / "tests/fixtures/drift-0.1.0.bapreset").read_bytes()
 assert abs(p.depth - .61) < .002 and abs(p.mix - .42) < .002
-assert p.drift_enabled and not p.patina_enabled
+assert p.drift_enabled and not p.patina_enabled and not p.atrium_enabled
 assert abs(p.patina_wear - .2) < .002
 report["checks"].append("Actual 0.1.0 state disables Patina and restores legacy Drift controls")
 
@@ -142,5 +143,66 @@ stacked = p(source, 48000)
 assert np.isfinite(stacked).all() and np.max(np.abs(stacked)) < 1
 sf.write(args.output / "06-drift-into-patina.wav", stacked.T, 48000, subtype="PCM_24")
 report["checks"].append("Patina and combined-rack listening examples rendered without clipping")
+
+for sample_rate in (44100, 48000, 96000):
+    p = load_plugin(str(args.plugin))
+    p.program = "Open atrium"
+    assert p.atrium_enabled and not p.drift_enabled and not p.patina_enabled
+    impulse = np.zeros((2, sample_rate * 3), dtype=np.float32)
+    impulse[:, 0] = .25
+    p.atrium_mix = 0
+    assert np.max(np.abs(p(impulse, sample_rate) - impulse)) < 1e-6
+    p.atrium_mix = 1
+    room = p(impulse, sample_rate, buffer_size=137)
+    assert np.isfinite(room).all() and np.max(np.abs(room)) < 1
+    assert np.sum(room[:, sample_rate // 4:] ** 2) > 1e-6
+    assert np.sum((room[0] - room[1]) ** 2) > 1e-6
+    p.atrium_width = 0
+    centered = p(impulse, sample_rate)
+    assert np.array_equal(centered[0], centered[1])
+    mono = p(impulse[:1], sample_rate)
+    assert mono.shape == impulse[:1].shape and np.isfinite(mono).all()
+    p.bypass = True
+    assert np.max(np.abs(p(impulse, sample_rate) - impulse)) < 1e-6
+    p.bypass = False
+    assert np.max(np.abs(p(np.zeros_like(impulse), sample_rate))) == 0
+    report["checks"].append(f"{sample_rate} Hz: Atrium dry, stereo tail, width, mono, bypass, silence")
+
+p.atrium_decay_s = 5.3
+p.atrium_pre_delay_ms = 71
+p.atrium_motion = .67
+p.drift_enabled = True
+p.patina_enabled = True
+saved = p.raw_state
+p.atrium_decay_s = .3
+p.atrium_enabled = False
+p.raw_state = saved
+assert abs(p.atrium_decay_s - 5.3) < .02 and p.atrium_enabled and p.patina_enabled and p.drift_enabled
+assert abs(p.atrium_pre_delay_ms - 71) < .1 and abs(p.atrium_motion - .67) < .002
+report["checks"].append("Three-module rack and Atrium controls survive state recall")
+p.raw_state = (Path(__file__).resolve().parents[1] / "tests/fixtures/patina-0.2.0.bapreset").read_bytes()
+assert p.drift_enabled and p.patina_enabled and not p.atrium_enabled
+assert abs(p.patina_wear - .476) < .002 and abs(p.atrium_decay_s - 2.4) < .02
+report["checks"].append("Actual 0.2.0 state restores Drift/Patina and disables Atrium after an active room")
+
+p = load_plugin(str(args.plugin))
+p.program = "Open atrium"
+start = time.perf_counter()
+room_source = np.pad(source, ((0, 0), (0, 48000 * 6)))
+room = p(room_source, 48000, buffer_size=512)
+report["atrium_render_seconds_for_18_seconds"] = time.perf_counter() - start
+assert np.isfinite(room).all() and np.max(np.abs(room)) < 1
+sf.write(args.output / "07-atrium-open.wav", room.T, 48000, subtype="PCM_24")
+p.program = "After hours"
+room = p(np.pad(source, ((0, 0), (0, 48000 * 20))), 48000, buffer_size=512)
+assert np.isfinite(room).all() and np.max(np.abs(room)) < 1
+sf.write(args.output / "08-atrium-after-hours.wav", room.T, 48000, subtype="PCM_24")
+p.program = "Open atrium"
+p.patina_enabled = True
+p.drift_enabled = True
+rack = p(room_source, 48000, buffer_size=512)
+assert np.isfinite(rack).all() and np.max(np.abs(rack)) < 1
+sf.write(args.output / "09-drift-patina-atrium.wav", rack.T, 48000, subtype="PCM_24")
+report["checks"].append("Atrium and full-rack listening examples with tails render without clipping")
 (args.output / "verification.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
 print(json.dumps(report, indent=2))

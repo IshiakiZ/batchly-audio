@@ -20,6 +20,22 @@ const std::array<const char*, 9> titles { "DEPTH", "RATE", "WANDER", "TONE", "FO
 const std::array<const char*, 9> tapeIds { "patina_sample", "patina_drive", "patina_wear", "patina_flutter",
     "patina_hiss", "patina_chorus", "patina_tone", "patina_mix", "output" };
 const std::array<const char*, 9> tapeTitles { "SAMPLE RATE", "DRIVE", "WEAR", "FLUTTER", "HISS", "CHORUS", "TONE", "MIX", "OUTPUT" };
+const std::array<const char*, 3> moduleNames { "DRIFT", "PATINA", "ATRIUM" };
+const std::array<const char*, 3> enabledIds { "drift_enabled", "patina_enabled", "atrium_enabled" };
+const std::array<const char*, 9> reverbIds { "atrium_decay", "atrium_size", "atrium_predelay", "atrium_damping",
+    "atrium_lowcut", "atrium_motion", "atrium_width", "atrium_mix", "output" };
+const std::array<const char*, 9> reverbTitles { "DECAY", "SIZE", "PRE-DELAY", "DAMPING", "LOW CUT", "MOTION", "WIDTH", "MIX", "OUTPUT" };
+const std::array<const char*, 9> reverbHints {
+    "Nominal low-frequency decay time. Damping makes the high frequencies fade faster.",
+    "Length of the room's reflection paths. Moving Size while audio plays can bend the tail's pitch.",
+    "Wait before the room responds. Keeps the start of each note clear. Moving this can bend pitch.",
+    "High-frequency cutoff inside the room. Lower values make a darker, softer tail.",
+    "Remove bass from the reverb input. The dry signal keeps its original bass.",
+    "Gently move the room's reflection paths for a softer, evolving tail.",
+    "Spread of the wet room. Zero makes a centered tail; mono tracks remain mono.",
+    "Dry/wet balance. Use fully wet on a send, or a little reverb directly on a track.",
+    "Final gain after all three effects. Keep the output meter below 0 dB."
+};
 const std::array<const char*, 9> tapeHints {
     "Lower the internal sample rate for a softer, submerged sound. Limited by your host's sample rate.",
     "Push the original soft saturation curve. Higher values add harmonics and compression.",
@@ -29,7 +45,7 @@ const std::array<const char*, 9> tapeHints {
     "Blend in a stereo modulated voice for a wider, softer sound.",
     "Additional top-end rolloff on the tape signal.",
     "Blend the tape signal with its input. Fully wet avoids parallel delay coloration.",
-    "Final gain after both effects. Keep the output meter below 0 dB."
+    "Final gain after all three effects. Keep the output meter below 0 dB."
 };
 const std::array<const char*, 9> hints {
     "Amount of pitch movement. Small amounts thicken; larger amounts bend the pitch.",
@@ -143,7 +159,7 @@ void DeckLookAndFeel::drawButtonText(juce::Graphics& g, juce::TextButton& button
             g.setColour(voice == 0 ? colour : accent);
             g.strokePath(wave, juce::PathStrokeType(2));
         }
-    } else {
+    } else if (button.getButtonText() == "Patina") {
         for (float x : { 19.f, 37.f }) {
             g.setColour(colour); g.drawEllipse(x - 7, y - 9, 14, 14, 1.8f);
             g.fillEllipse(x - 2, y - 4, 4, 4);
@@ -153,6 +169,18 @@ void DeckLookAndFeel::drawButtonText(juce::Graphics& g, juce::TextButton& button
             }
         }
         g.setColour(accent); g.drawLine(19, y + 7, 37, y + 7, 2);
+    } else {
+        // Nested arches give the room processor its own original collection mark.
+        for (int layer = 0; layer < 3; ++layer) {
+            const float inset = layer * 4.f;
+            juce::Path arch;
+            arch.startNewSubPath(13 + inset, y + 12);
+            arch.lineTo(13 + inset, y - 1);
+            arch.cubicTo(13 + inset, y - 18 + inset, 43 - inset, y - 18 + inset, 43 - inset, y - 1);
+            arch.lineTo(43 - inset, y + 12);
+            g.setColour(layer == 1 ? accent : colour);
+            g.strokePath(arch, juce::PathStrokeType(1.8f));
+        }
     }
     g.setColour(colour); g.setFont(brandFont(20, true));
     g.drawText(button.getButtonText(), 53, 0, button.getWidth() - 58, button.getHeight(), juce::Justification::centredLeft);
@@ -179,20 +207,22 @@ BatchlyEditor::BatchlyEditor(BatchlyProcessor& p) : AudioProcessorEditor(p), pro
             processor.parameters.getParameter(ids[i])->getDefaultValue()));
     }
     for (auto* button : { &bypass, &open, &play, &stop, &demo, &exportButton, &savePreset, &loadPreset, &updates,
-                         &driftTab, &patinaTab, &moduleEnabled }) addAndMakeVisible(*button);
+                         &driftTab, &patinaTab, &atriumTab, &moduleEnabled }) addAndMakeVisible(*button);
     bypass.setClickingTogglesState(true);
     bypassAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(processor.parameters, "bypass", bypass);
-    bypass.setTooltip("Bypass both effects and Output to compare with the original signal. Changes are faded to prevent clicks.");
+    bypass.setTooltip("Bypass the whole rack and Output to compare with the original signal. Changes are faded to prevent clicks.");
     presets.onChange = [this] { if (presets.getSelectedId() > 0) processor.setModuleProgram(shownModule, presets.getSelectedId() - 1); };
     presets.setTooltip("Choose a starting point, then adjust any control.");
     addAndMakeVisible(presets);
-    driftTab.setName("collection"); patinaTab.setName("collection");
+    driftTab.setName("collection"); patinaTab.setName("collection"); atriumTab.setName("collection");
     driftTab.setTooltip("Show Drift controls. The signal chain stays unchanged.");
     patinaTab.setTooltip("Show Patina controls. Use PATINA ON/OFF to enable or disable its sound.");
+    atriumTab.setTooltip("Show Atrium controls. Use ATRIUM ON/OFF to enable or disable the reverb.");
     driftTab.onClick = [this] { showModule(0); };
     patinaTab.onClick = [this] { showModule(1); };
+    atriumTab.onClick = [this] { showModule(2); };
     moduleEnabled.setClickingTogglesState(true);
-    moduleEnabled.setTooltip("Switch this effect on or off. The other effect keeps its own setting.");
+    moduleEnabled.setTooltip("Switch this effect on or off. The other effects keep their own settings.");
     open.onClick = [this] { chooseAudio(); };
     play.onClick = [this] { processor.play(); };
     stop.onClick = [this] { processor.stop(); };
@@ -211,7 +241,7 @@ BatchlyEditor::BatchlyEditor(BatchlyProcessor& p) : AudioProcessorEditor(p), pro
     startTimerHz(30);
 }
 void BatchlyEditor::showModule(int module) {
-    shownModule = juce::jlimit(0, 1, module);
+    shownModule = juce::jlimit(0, 2, module);
     processor.selectModule(shownModule);
     configureKnobs();
     presets.clear(juce::dontSendNotification);
@@ -219,32 +249,38 @@ void BatchlyEditor::showModule(int module) {
     presets.setSelectedId(processor.getDisplayedProgram() % 5 + 1, juce::dontSendNotification);
     moduleAttachment.reset();
     moduleAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(processor.parameters,
-        shownModule == 0 ? "drift_enabled" : "patina_enabled", moduleEnabled);
+        enabledIds[shownModule], moduleEnabled);
     driftTab.setToggleState(shownModule == 0, juce::dontSendNotification);
     patinaTab.setToggleState(shownModule == 1, juce::dontSendNotification);
-    moduleEnabled.setButtonText((shownModule == 0 ? "DRIFT " : "PATINA ") + juce::String(moduleEnabled.getToggleState() ? "ON" : "OFF"));
+    atriumTab.setToggleState(shownModule == 2, juce::dontSendNotification);
+    moduleEnabled.setButtonText(juce::String(moduleNames[shownModule]) + (moduleEnabled.getToggleState() ? " ON" : " OFF"));
     repaint();
 }
 void BatchlyEditor::configureKnobs() {
     const bool tape = shownModule == 1;
+    const bool reverb = shownModule == 2;
     for (size_t i = 0; i < knobs.size(); ++i) {
         attachments[i].reset();
         auto& knob = knobs[i];
-        const auto id = tape ? tapeIds[i] : ids[i];
+        const auto id = reverb ? reverbIds[i] : tape ? tapeIds[i] : ids[i];
         attachments[i] = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(processor.parameters, id, knob);
-        const bool frequency = tape ? (i == 0 || i == 6) : (i == 1 || i == 3);
-        knob.textFromValueFunction = [i, frequency](double value) {
+        const bool frequency = reverb ? (i == 3 || i == 4) : tape ? (i == 0 || i == 6) : (i == 1 || i == 3);
+        knob.textFromValueFunction = [i, frequency, reverb](double value) {
+            if (reverb && i == 0) return juce::String(value, 2) + " s";
+            if (reverb && i == 2) return juce::String(value, 1) + " ms";
             if (frequency) return value >= 1000 ? juce::String(value / 1000, 2) + " kHz" : juce::String(value, 2) + " Hz";
             if (i == 8) return juce::String(value, 1) + " dB";
             return juce::String(value * 100, 0) + " %";
         };
-        knob.valueFromTextFunction = [i, frequency](const juce::String& value) {
+        knob.valueFromTextFunction = [i, frequency, reverb](const juce::String& value) {
             const auto number = value.getDoubleValue();
+            if (reverb && (i == 0 || i == 2)) return number;
             if (frequency) return number * (value.containsIgnoreCase("k") ? 1000 : 1);
             return i == 8 ? number : number / 100;
         };
-        knob.setName(tape ? tapeTitles[i] : titles[i]); knob.setTooltip(tape ? tapeHints[i] : hints[i]);
-        labels[i].setText(tape ? tapeTitles[i] : titles[i], juce::dontSendNotification);
+        knob.setName(reverb ? reverbTitles[i] : tape ? tapeTitles[i] : titles[i]);
+        knob.setTooltip(reverb ? reverbHints[i] : tape ? tapeHints[i] : hints[i]);
+        labels[i].setText(reverb ? reverbTitles[i] : tape ? tapeTitles[i] : titles[i], juce::dontSendNotification);
         auto* parameter = processor.parameters.getParameter(id);
         knob.setDoubleClickReturnValue(true, parameter->convertFrom0to1(parameter->getDefaultValue()));
         knob.updateText();
@@ -256,7 +292,8 @@ BatchlyEditor::~BatchlyEditor() {
     setLookAndFeel(nullptr);
 }
 void BatchlyEditor::resized() {
-    driftTab.setBounds(12, 139, 146, 65); patinaTab.setBounds(12, 215, 146, 65);
+    driftTab.setBounds(12, 136, 146, 59); patinaTab.setBounds(12, 204, 146, 59);
+    atriumTab.setBounds(12, 272, 146, 59);
     moduleEnabled.setBounds(414, 19, 139, 32);
     presets.setBounds(565, 19, 210, 32); savePreset.setBounds(786, 19, 52, 32);
     loadPreset.setBounds(845, 19, 52, 32); bypass.setBounds(910, 19, 72, 32);
@@ -284,27 +321,31 @@ void BatchlyEditor::paint(juce::Graphics& g) {
     text(g, "A U D I O", { 26, 47, 130, 18 }, 11, muted);
     text(g, "THE COLLECTION", { 24, 104, 136, 20 }, 10, muted, true);
     const auto rack = processor.readRackParameters();
-    text(g, "SIGNAL PATH", { 24, 315, 140, 20 }, 10, muted, true);
-    text(g, rack.driftEnabled ? "Drift  / ON" : "Drift  / OFF", { 24, 346, 140, 22 }, 13, rack.driftEnabled ? ink : muted, true);
-    text(g, "  >", { 24, 373, 140, 16 }, 11, accentText);
-    text(g, rack.patina.enabled ? "Patina / ON" : "Patina / OFF", { 24, 395, 140, 22 }, 13, rack.patina.enabled ? ink : muted, true);
-    text(g, rack.drift.bypass ? "RACK BYPASSED" : "SERIAL / 01 > 02", { 24, 439, 140, 20 }, 9, accentText);
+    text(g, "SIGNAL PATH", { 24, 358, 140, 20 }, 10, muted, true);
+    text(g, rack.driftEnabled ? "1  Drift  / ON" : "1  Drift  / OFF", { 24, 385, 140, 22 }, 12, rack.driftEnabled ? ink : muted, true);
+    text(g, rack.patina.enabled ? "2  Patina / ON" : "2  Patina / OFF", { 24, 411, 140, 22 }, 12, rack.patina.enabled ? ink : muted, true);
+    text(g, rack.atrium.enabled ? "3  Atrium / ON" : "3  Atrium / OFF", { 24, 437, 140, 22 }, 12, rack.atrium.enabled ? ink : muted, true);
+    text(g, rack.drift.bypass ? "RACK BYPASSED" : "SERIAL / 1 > 2 > 3", { 24, 471, 140, 20 }, 9, accentText);
     text(g, "LOCAL AUDIO", { 24, 561, 132, 20 }, 10, muted, true);
     text(g, "Open source", { 24, 589, 125, 20 }, 13, ink);
     text(g, "v" + juce::String(batchly::UpdateService::currentVersion), { 24, 610, 140, 18 }, 9, muted);
-    text(g, shownModule == 0 ? "AUDIO TOOLS / 001" : "AUDIO TOOLS / 002", { 196, 20, 200, 32 }, 11, muted);
+    text(g, "AUDIO TOOLS / 00" + juce::String(shownModule + 1), { 196, 20, 200, 32 }, 11, muted);
     g.setGradientFill(juce::ColourGradient(juce::Colour(0xffeeeceb), 192, 84, juce::Colour(0xffd4d2d0), 980, 159, false));
     g.fillRect(190, 87, 792, 70);
     for (int y = 90; y < 153; y += 3) {
         g.setColour(juce::Colours::white.withAlpha(.045f)); g.drawHorizontalLine(y, 198, 975);
     }
-    text(g, shownModule == 0 ? "DRIFT" : "PATINA", { 211, 91, 185, 61 }, shownModule == 0 ? 48.f : 42.f, ink, true);
+    text(g, moduleNames[shownModule], { 211, 91, 185, 61 }, shownModule == 0 ? 48.f : 42.f, ink, true);
     g.setColour(accent); g.fillRect(396, 106, 3, 33);
-    text(g, shownModule == 0 ? "RANDOM-MOTION CHORUS & VIBRATO" : "TAPE COLOR & PITCH WEAR", { 420, 107, 473, 20 }, 13, ink, true);
-    text(g, shownModule == 0 ? "Slow movement. Soft edges. A little room to wander." : "Soft edges. Warm reels. A little history in every note.", { 420, 129, 496, 18 }, 12, muted);
+    const std::array<const char*, 3> subtitles { "RANDOM-MOTION CHORUS & VIBRATO", "TAPE COLOR & PITCH WEAR", "SPACIOUS ROOMS & MOVING TAILS" };
+    const std::array<const char*, 3> descriptions { "Slow movement. Soft edges. A little room to wander.",
+        "Soft edges. Warm reels. A little history in every note.", "Close walls. Open halls. Give each note a place to linger." };
+    text(g, subtitles[shownModule], { 420, 107, 473, 20 }, 13, ink, true);
+    text(g, descriptions[shownModule], { 420, 129, 496, 18 }, 12, muted);
     screw(g, 203, 101); screw(g, 969, 101); screw(g, 203, 144); screw(g, 969, 144);
     const juce::Rectangle<float> scope(196, 184, 398, 182);
     if (shownModule == 1) drawTapeDeck(g);
+    else if (shownModule == 2) drawReverbRoom(g);
     else {
     g.setColour(ink); g.fillRect(scope);
     g.setColour(rule); g.drawRect(scope, 1);
@@ -325,8 +366,8 @@ void BatchlyEditor::paint(juce::Graphics& g) {
     };
     drawHistory(rightHistory, background); drawHistory(leftHistory, accent); g.restoreState();
     }
-    text(g, "MOVEMENT", { 202, 380, 125, 18 }, 10, accentText, true);
-    text(g, "CHARACTER", { 337, 380, 370, 18 }, 10, accentText, true);
+    text(g, shownModule == 2 ? "ARRIVAL" : "MOVEMENT", { 202, 380, 125, 18 }, 10, accentText, true);
+    text(g, shownModule == 2 ? "TONE / MOTION" : "CHARACTER", { 337, 380, 370, 18 }, 10, accentText, true);
     text(g, "IMAGE / BLEND", { 719, 380, 254, 18 }, 10, accentText, true);
     g.setColour(rule); g.drawHorizontalLine(552, 195, 977);
     g.setColour(panel); g.fillRect(636, 568, 142, 12);
@@ -368,15 +409,44 @@ void BatchlyEditor::drawTapeDeck(juce::Graphics& g) {
         settings.enabled ? juce::Colour(0xffe6b591) : background);
     text(g, "STEREO COLOR", { 459, 337, 125, 19 }, 10, background);
 }
+void BatchlyEditor::drawReverbRoom(juce::Graphics& g) {
+    const auto room = processor.readRackParameters().atrium;
+    g.setColour(ink); g.fillRect(196, 184, 398, 182);
+    g.setColour(rule); g.drawRect(196, 184, 398, 182);
+    text(g, "ROOM DEPTH", { 211, 193, 195, 20 }, 10, background);
+    text(g, juce::String(room.decaySeconds, 2) + " s", { 501, 193, 80, 20 }, 10, background);
+    const juce::Rectangle<float> outer(216, 221, 358, 104);
+    const juce::Rectangle<float> inner = outer.reduced(92 + room.size * 34, 22 + room.size * 15);
+    g.setColour(juce::Colour(0xff625653));
+    g.drawLine({ outer.getTopLeft(), inner.getTopLeft() }, 1);
+    g.drawLine({ outer.getTopRight(), inner.getTopRight() }, 1);
+    g.drawLine({ outer.getBottomLeft(), inner.getBottomLeft() }, 1);
+    g.drawLine({ outer.getBottomRight(), inner.getBottomRight() }, 1);
+    for (int layer = 0; layer < 7; ++layer) {
+        const float depth = static_cast<float>(layer) / 6;
+        const auto frame = outer.reduced((outer.getWidth() - inner.getWidth()) * depth * .5f,
+            (outer.getHeight() - inner.getHeight()) * depth * .5f);
+        g.setColour(layer == 6 ? accent : juce::Colour(0xffa39995).withAlpha(.7f - .07f * layer));
+        g.drawRect(frame, layer == 6 ? 2.f : 1.f);
+    }
+    // This is a live wet-level indicator within a room illustration, not a
+    // measured room response or a claim of a physical acoustic simulation.
+    const float glow = juce::jlimit(0.f, 1.f, reverbMeter * 8);
+    g.setColour(accent.withAlpha(.08f + .45f * glow)); g.fillRect(inner.reduced(3));
+    g.setColour(accent); g.fillRect(218.f, 319.f, 352.f * glow, 3.f);
+    text(g, room.enabled ? "ROOM / ENGAGED" : "ROOM / OFF", { 211, 337, 170, 19 }, 10, background);
+    text(g, "WET LEVEL", { 489, 337, 94, 19 }, 10, background);
+}
 void BatchlyEditor::timerCallback() {
     if (shownModule != processor.selectedModule()) showModule(processor.selectedModule());
     leftHistory[historyPosition] = processor.motionLeft.load();
     rightHistory[historyPosition] = processor.motionRight.load();
     historyPosition = (historyPosition + 1) % leftHistory.size();
     meter = std::max(processor.peak.load(), meter * .9f);
+    reverbMeter = std::max(processor.reverbLevel.load(), reverbMeter * .93f);
     if (meter > .001f && moduleEnabled.getToggleState() && !bypass.getToggleState())
         reelAngle = std::fmod(reelAngle + .025f + .009f * processor.tapeMovement.load(), juce::MathConstants<float>::twoPi);
-    moduleEnabled.setButtonText((shownModule == 0 ? "DRIFT " : "PATINA ") + juce::String(moduleEnabled.getToggleState() ? "ON" : "OFF"));
+    moduleEnabled.setButtonText(juce::String(moduleNames[shownModule]) + (moduleEnabled.getToggleState() ? " ON" : " OFF"));
     play.setEnabled(processor.loadedFile().existsAsFile() && !processor.isPlaying());
     stop.setEnabled(processor.isPlaying());
     exportButton.setEnabled(processor.loadedFile().existsAsFile() && !exporting);

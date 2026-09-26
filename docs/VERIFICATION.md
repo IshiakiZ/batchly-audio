@@ -1,6 +1,6 @@
 # Drift 0.1 verification record
 
-For the current two-effect release, see [Patina 0.2 verification](PATINA-VERIFICATION.md). The notes below preserve the original Drift checks.
+For the current three-effect release, see [Atrium 0.3 verification](ATRIUM-VERIFICATION.md), and [Patina 0.2 verification](PATINA-VERIFICATION.md) for the previous release. The notes below preserve the original Drift checks.
 
 Local Windows x64 preview checked September 26, 2026. This is the first module, Drift, not the complete 36-plugin collection.
 
