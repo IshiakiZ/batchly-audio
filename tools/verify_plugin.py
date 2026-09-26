@@ -573,5 +573,47 @@ for index,name in enumerate(("Open window","Centered bass","Mono bloom","Narrow 
     sf.write(args.output/f"{48+index:02}-vista-{name.lower().replace(' ','-')}.wav",wide.T,sr,subtype="PCM_24")
     if index==0:report["vista_render_seconds_for_9_seconds"]=time.perf_counter()-start
 report["checks"].append("Five original Vista presets preserve synthesized stereo fold-down without clipping")
+for sample_rate in (44100,48000,96000):
+    p=load_plugin(str(args.plugin));p.program="Dense cut"
+    assert p.quartz_enabled and not p.vista_enabled
+    t=np.arange(sample_rate)/sample_rate
+    source=np.stack([.7*np.sin(2*np.pi*220*t),.35*np.sin(2*np.pi*220*t)]).astype(np.float32)
+    p.quartz_mix=0
+    assert np.max(np.abs(p(source,sample_rate)-source))<1e-6
+    p.quartz_mix=1;p.quartz_character=0;p.quartz_ceiling_db=-6
+    limited=p(source,sample_rate,buffer_size=257)
+    assert np.max(np.abs(limited))<10**(-6/20)+.001
+    assert np.max(np.abs(limited[1]-limited[0]*.5))<1e-6
+    assert np.sqrt(np.mean((limited-source)**2))>.05
+    assert p(source[:1],sample_rate).shape==source[:1].shape
+    p.bypass=True
+    assert np.max(np.abs(p(source,sample_rate)-source))<1e-6
+    p.bypass=False
+    assert np.max(np.abs(p(np.zeros_like(source),sample_rate)))==0
+    report["checks"].append(f"{sample_rate} Hz: Quartz dry, sample ceiling, stereo link, mono, bypass and silence")
+p.quartz_low_db=-3.7;p.quartz_release_ms=237;p.quartz_ceiling_db=-4.2
+accepted={n:p.parameters[n].raw_value for n in ("quartz_low_db","quartz_release_ms","quartz_ceiling_db")}
+earlier=("drift_enabled","patina_enabled","atrium_enabled","chime_enabled","helix_enabled","gleam_enabled","relay_enabled","forge_enabled","cinder_enabled","ember_enabled","vista_enabled")
+for name in earlier:setattr(p,name,True)
+saved=p.raw_state;p.program="Clear finish";p.raw_state=saved
+assert all(abs(p.parameters[n].raw_value-v)<1e-7 for n,v in accepted.items())
+assert all(getattr(p,n) for n in (*earlier,"quartz_enabled"))
+report["checks"].append("Twelve-effect rack and Quartz signed EQ, release and ceiling survive state recall")
+for version in ("drift-0.1.0","patina-0.2.0","atrium-0.3.0","chime-0.4.0","helix-0.5.0","gleam-0.6.0","relay-0.7.0","forge-0.8.0","cinder-0.9.0","ember-0.10.0","vista-0.11.0"):
+    p.quartz_enabled=True
+    p.raw_state=(Path(__file__).resolve().parents[1]/f"tests/fixtures/{version}.bapreset").read_bytes()
+    assert not p.quartz_enabled
+    if version.startswith("vista"):assert p.vista_enabled and p.ember_enabled
+    report["checks"].append(f"Actual {version} state disables Quartz and retains its saved rack")
+mastering=(drums*.8+stereo*.75+bass*.6).astype(np.float32)
+sf.write(args.output/"53-original-mix.wav",mastering.T,48000,subtype="PCM_24")
+for index,name in enumerate(("Clear finish","Warm facets","Bright polish","Dense cut","Soft edges")):
+    p=load_plugin(str(args.plugin));p.program=name
+    start=time.perf_counter();finished=p(np.pad(mastering,((0,0),(0,48000))),48000,buffer_size=257)
+    assert np.isfinite(finished).all() and np.max(np.abs(finished))<1
+    assert np.max(np.abs(finished[:,-4800:]))<1e-5
+    sf.write(args.output/f"{54+index:02}-quartz-{name.lower().replace(' ','-')}.wav",finished.T,48000,subtype="PCM_24")
+    if index==0:report["quartz_render_seconds_for_9_seconds"]=time.perf_counter()-start
+report["checks"].append("Five original Quartz presets finish an original generated mix without clipping")
 (args.output / "verification.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
 print(json.dumps(report, indent=2))

@@ -15,9 +15,10 @@ Inventory refreshed September 26, 2026 from installed VST3 filenames and public 
 9. Corrosion-inspired tonal/noise texture: Cinder, added in 0.9 with original filtered grit, separately shaped generated noise, linked release and stereo correlation.
 10. Vortex-inspired bass saturation: Ember, added in 0.10 with four original continuously blended curves, antiderivative averaging, bias, tone shaping and bass restoration.
 11. Horizon-inspired stereo imaging: Vista, added in 0.11 with original complementary width bands, generated stereo difference and preserved mono fold-down.
-12. Focused filter and dynamics effects: establish one small, verified module at a time.
-13. Larger multi-effect and vocal processors: only after their component effects work.
-14. Instruments and MIDI tools: separate designs and original or redistributable sound sources.
+12. 24K-inspired broad mastering: Quartz, added in 0.12 with original broad tone shaping, soft character, linked sample-peak control and adjustable release.
+13. Focused filter and dynamics effects: establish one small, verified module at a time.
+14. Larger multi-effect and vocal processors: only after their component effects work.
+15. Instruments and MIDI tools: separate designs and original or redistributable sound sources.
 
 The order after Drift is provisional. Category names below describe the installed plugin metadata, not a completed feature specification.
 

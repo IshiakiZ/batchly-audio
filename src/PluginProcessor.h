@@ -57,6 +57,7 @@ public:
     std::atomic<float> gritLevel { 0 }, textureLevel { 0 };
     std::atomic<float> bassInput { 0 }, bassWet { 0 };
     std::atomic<float> stereoMid { 0 }, stereoSide { 0 };
+    std::atomic<float> masterReduction { 0 };
     std::array<std::atomic<float>, 7> resonatorLevels {};
 
 private:
@@ -72,6 +73,7 @@ private:
     std::array<std::atomic<float>*, 8> cinderValues {};
     std::array<std::atomic<float>*, 8> emberValues {};
     std::array<std::atomic<float>*, 8> vistaValues {};
+    std::array<std::atomic<float>*, 8> quartzValues {};
     std::atomic<float>* driftEnabled = nullptr;
     std::atomic<float>* patinaEnabled = nullptr;
     std::atomic<float>* atriumEnabled = nullptr;
@@ -83,6 +85,7 @@ private:
     std::atomic<float>* cinderEnabled = nullptr;
     std::atomic<float>* emberEnabled = nullptr;
     std::atomic<float>* vistaEnabled = nullptr;
+    std::atomic<float>* quartzEnabled = nullptr;
     batchly::RackEngine engine;
     std::atomic<int> currentProgram { 0 };
     std::array<std::atomic<int>, batchly::moduleCount> modulePrograms {};

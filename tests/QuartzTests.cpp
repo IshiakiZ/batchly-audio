@@ -39,6 +39,13 @@ int main(){try{
     p.lowDb=9;p.highDb=-9;Audio impulse{std::vector<float>(48000),std::vector<float>(48000)};
     impulse[0][0]=impulse[1][0]=.5f;const auto tail=render(impulse,48000,p);
     for(size_t i=7200;i<48000;++i)require(std::abs(tail[0][i])<1e-7,"Tone filter tail exceeded 150 ms");
+    p=QuartzParameters{};p.enabled=true;p.ceilingDb=-6;
+    Audio recovery{std::vector<float>(48000,.1f),std::vector<float>(48000,.1f)};
+    recovery[0][0]=recovery[1][0]=4;
+    p.releaseMs=20;const auto fast=render(recovery,48000,p);
+    p.releaseMs=500;const auto slow=render(recovery,48000,p);
+    require(fast[0][4800]>slow[0][4800]*2,"Release time does not change gain recovery");
+    require(std::abs(fast[0][24000]-.1f)<1e-6,"Limiter failed to recover after a transient");
     QuartzEngine engine;engine.prepare(48000,p);Audio block{std::vector<float>(257),std::vector<float>(257)};float* data[]{block[0].data(),block[1].data()};
     for(int step=0;step<800;++step){p.inputDb=step%2?12.f:-12.f;p.lowDb=p.highDb=step%2?9.f:-9.f;p.midDb=-p.lowDb;p.ceilingDb=step%2?0.f:-12.f;p.releaseMs=step%2?20.f:500.f;p.enabled=step%11!=0;for(int i=0;i<257;++i)block[0][i]=block[1][i]=2*std::sin((step*257+i)*.37);engine.process(data,2,257,p);for(const auto& c:block)for(float x:c)require(std::isfinite(x)&&std::abs(x)<8,"Automation unstable");}
     p.enabled=true;p.lowDb=std::numeric_limits<float>::quiet_NaN();block[0][0]=std::numeric_limits<float>::infinity();engine.process(data,2,257,p);for(const auto& c:block)for(float x:c)require(std::isfinite(x),"Invalid input escaped");

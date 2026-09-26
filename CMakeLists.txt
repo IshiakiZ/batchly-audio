@@ -64,7 +64,7 @@ if(BATCHLY_BUILD_APP)
         PLUGIN_CODE Badr
         FORMATS VST3 Standalone
         PRODUCT_NAME "Batchly Audio"
-        DESCRIPTION "Original modulation, tape color, reverb, resonance, phasing, brightness, echoes, drum shaping, texture, bass saturation and stereo imaging"
+        DESCRIPTION "Original modulation, tape color, reverb, resonance, phasing, brightness, echoes, drum shaping, texture, bass saturation, stereo imaging and mastering"
         IS_SYNTH FALSE
         NEEDS_MIDI_INPUT FALSE
         NEEDS_MIDI_OUTPUT FALSE
