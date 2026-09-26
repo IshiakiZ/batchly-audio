@@ -349,7 +349,11 @@ void BatchlyEditor::showModule(int module) {
     moduleAttachment.reset();
     moduleAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(processor.parameters,
         enabledIds[shownModule], moduleEnabled);
-    for (int i = 0; i < batchly::moduleCount; ++i) collectionTabs[i].setToggleState(shownModule == i, juce::dontSendNotification);
+    for (int i = 0; i < batchly::moduleCount; ++i) {
+        collectionTabs[i].setToggleState(shownModule == i, juce::dontSendNotification);
+        // Set the first frame correctly before the periodic meter refresh runs.
+        collectionTabs[i].getProperties().set("effectEnabled", processor.parameters.getRawParameterValue(enabledIds[i])->load() >= .5f);
+    }
     const auto selectedBounds = collectionTabs[shownModule].getBounds();
     const int viewY = collectionViewport.getViewPositionY();
     if (selectedBounds.getY() < viewY) collectionViewport.setViewPosition(0, selectedBounds.getY());
