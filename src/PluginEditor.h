@@ -37,6 +37,7 @@ private:
     void drawTapeDeck(juce::Graphics&);
     void drawReverbRoom(juce::Graphics&);
     void drawResonator(juce::Graphics&);
+    void drawPhaser(juce::Graphics&);
     BatchlyProcessor& processor;
     DeckLookAndFeel look;
     std::array<juce::Slider, 9> knobs;
@@ -62,6 +63,8 @@ private:
     size_t historyPosition = 0;
     float meter = 0;
     int shownModule = -1;
+    int displayedProgram = -1;
+    bool displayedModified = false;
     float reelAngle = 0;
     float reverbMeter = 0;
     std::array<float, 7> resonatorMeters {};

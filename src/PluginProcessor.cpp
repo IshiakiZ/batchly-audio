@@ -59,6 +59,15 @@ juce::AudioProcessorValueTreeState::ParameterLayout BatchlyProcessor::makeLayout
     layout.add(std::make_unique<juce::AudioParameterChoice>(juce::ParameterID { "chime_root", 1 }, "Chime root", notes, 0));
     layout.add(std::make_unique<juce::AudioParameterChoice>(juce::ParameterID { "chime_scale", 1 }, "Chime scale", scales, 1));
     layout.add(std::make_unique<juce::AudioParameterInt>(juce::ParameterID { "chime_octave", 1 }, "Chime octave", 2, 4, 3));
+    layout.add(std::make_unique<juce::AudioParameterBool>(juce::ParameterID { "helix_enabled", 1 }, "Helix enabled", false));
+    add("helix_rate", "Helix rate (Hz)", .03f, 8, .24f, .35f);
+    add("helix_depth", "Helix depth", 0, 1, .65f);
+    add("helix_feedback", "Helix feedback", -.85f, .85f, .35f);
+    add("helix_center", "Helix center (Hz)", 100, 6000, 650, .35f);
+    add("helix_tone", "Helix tone (Hz)", 500, 18000, 11000, .35f);
+    add("helix_drive", "Helix drive", 0, 1, .1f);
+    add("helix_width", "Helix width", 0, 1, .75f);
+    add("helix_mix", "Helix mix", 0, 1, .5f);
     return layout;
 }
 
@@ -74,6 +83,8 @@ BatchlyProcessor::BatchlyProcessor()
     atriumEnabled = parameters.getRawParameterValue("atrium_enabled");
     chimeEnabled = parameters.getRawParameterValue("chime_enabled");
     for (size_t i = 0; i < chimeValues.size(); ++i) chimeValues[i] = parameters.getRawParameterValue(batchly::factoryIds[3][i]);
+    helixEnabled = parameters.getRawParameterValue("helix_enabled");
+    for (size_t i = 0; i < helixValues.size(); ++i) helixValues[i] = parameters.getRawParameterValue(batchly::factoryIds[4][i]);
     formats.registerBasicFormats();
     if (isStandalone()) getBus(true, 0)->enable(false);
 }
@@ -122,6 +133,11 @@ batchly::RackParameters BatchlyProcessor::readRackParameters() const noexcept {
     p.chime.width = chimeValues[6]->load(); p.chime.mix = chimeValues[7]->load();
     p.chime.root = static_cast<int>(chimeValues[8]->load()); p.chime.scale = static_cast<int>(chimeValues[9]->load());
     p.chime.octave = static_cast<int>(chimeValues[10]->load()); p.chime.enabled = chimeEnabled->load() >= .5f;
+    p.helix.enabled = helixEnabled->load() > .5f;
+    p.helix.rateHz = helixValues[0]->load(); p.helix.depth = helixValues[1]->load();
+    p.helix.feedback = helixValues[2]->load(); p.helix.centerHz = helixValues[3]->load();
+    p.helix.toneHz = helixValues[4]->load(); p.helix.drive = helixValues[5]->load();
+    p.helix.width = helixValues[6]->load(); p.helix.mix = helixValues[7]->load();
     return p;
 }
 double BatchlyProcessor::getTailLengthSeconds() const {
@@ -159,6 +175,7 @@ void BatchlyProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::Midi
     motionLeft.store(motion[0]); motionRight.store(motion[1]);
     tapeMovement.store(engine.tapeMotion()[0]);
     reverbLevel.store(engine.reverbPeak());
+    const auto sweep = engine.helixSweep(); phaserLeft.store(sweep[0]); phaserRight.store(sweep[1]);
     const auto levels = engine.chimeLevels();
     for (size_t i = 0; i < levels.size(); ++i) resonatorLevels[i].store(levels[i]);
 }
@@ -206,7 +223,7 @@ bool BatchlyProcessor::isCurrentProgramModified() const {
 }
 void BatchlyProcessor::getStateInformation(juce::MemoryBlock& data) {
     auto state = parameters.copyState();
-    state.setProperty("schemaVersion", 4, nullptr);
+    state.setProperty("schemaVersion", 5, nullptr);
     state.setProperty("program", currentProgram.load(), nullptr);
     for (int module = 0; module < batchly::moduleCount; ++module)
         state.setProperty(batchly::programKeys[module], modulePrograms[module].load(), nullptr);

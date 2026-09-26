@@ -8,9 +8,10 @@ Inventory refreshed September 26, 2026 from installed VST3 filenames and public 
 2. Origin-style tape coloration: Patina, added in 0.2 with original filtered rate reduction, saturation, wear/flutter, generated hiss and chorus.
 3. Space-inspired spatial processing: Atrium, added in 0.3 with an original modulated room network, decay, pre-delay, damping, low cut and width.
 4. Gamma-inspired harmonic resonance: Chime, added in 0.4 with an original tuned modal bank, scale selection, two octaves, decay, stereo detuning and motion.
-5. Focused delay, phaser and filter effects: establish one small, verified module at a time.
-6. Larger multi-effect and vocal processors: only after their component effects work.
-7. Instruments and MIDI tools: separate designs and original or redistributable sound sources.
+5. Space Cadet-inspired stereo phasing: Helix, added in 0.5 with eight original all-pass stages, signed feedback, moving stereo notches and input coloration.
+6. Focused delay and filter effects: establish one small, verified module at a time.
+7. Larger multi-effect and vocal processors: only after their component effects work.
+8. Instruments and MIDI tools: separate designs and original or redistributable sound sources.
 
 The order after Drift is provisional. Category names below describe the installed plugin metadata, not a completed feature specification.
 

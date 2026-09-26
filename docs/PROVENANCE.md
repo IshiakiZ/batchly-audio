@@ -38,6 +38,14 @@ The five preset settings, tuned-string illustration and hanging-bar icon are ori
 
 See `CHIME-VERIFICATION.md` for completed checks and limits.
 
+## Helix
+
+The [official Space Cadet description](https://cymatics.fm/pages/cymatics-space-cadet-free-download), consulted September 26, 2026, describes stereo phasing with rate, depth, feedback, tone, width, drive and blend. Helix implements that musical role using an independently written eight-stage all-pass cascade in `src/HelixEngine.h`. No commercial plugin source, binary internals, factory presets, audio or graphics were used.
+
+Original choices include staggered stage frequencies, sine sweeps across a logarithmic range, a continuously adjustable stereo phase offset, signed and bounded nonlinear feedback, soft input drive, output tone and smoothed parameters. The fixed processing arrays allocate no memory during audio processing. Fully wet processing rotates phase; blending the dry input creates moving notches. The five presets, intertwined-loop icon and paired orbital display are original. Helix runs after Chime and defaults off in older states.
+
+See `HELIX-VERIFICATION.md` for the checks and remaining limits.
+
 ## Framework
 
 JUCE 9.0.2 is pinned to commit `72782788ce18c2d4d760b28e0921d6ffc6431102`. It supplies the GUI, audio-device management, file reading/writing, parameter management, and VST3/standalone wrappers. It does not implement Drift's effect algorithm.
