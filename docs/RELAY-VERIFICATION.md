@@ -20,7 +20,7 @@ The test saves a native preset and calls the app's actual export implementation 
 
 ## FL Studio
 
-The installed VST3 loaded in FL Studio 24.2.2. The previous Gleam project restored its existing effects with Relay off. Loading the native Bent signal preset displayed all eight expected Relay settings, the correct selected icon and enable states. FL Studio saved the separate `build-next/Relay-verification.flp`. A fresh FL process opened that file, but the desktop capture tool then failed twice with `foreground window did not report a process id`, so visual confirmation after reopening remains unverified. Independent VST3 state round trips pass.
+The installed VST3 loaded in FL Studio 24.2.2. The previous Gleam project restored its existing effects with Relay off. Loading the native Bent signal preset displayed all eight expected Relay settings, the correct selected icon and enable states. FL Studio saved the separate `build-next/Relay-verification.flp`. A fresh FL process opened that file. After refreshing the desktop connection, on-screen inspection confirmed Bent signal, all eight controls, the selected Relay page and enable states. The saved evidence is `build-next/Relay-FL-recall.jpg`. Independent VST3 state round trips also pass.
 
 ## Limits
 

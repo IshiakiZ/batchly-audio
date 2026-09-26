@@ -16,8 +16,12 @@ The actual JUCE editor components render all nine pages in desktop and VST3 layo
 
 The app's native export code processed an original two-second stereo probe with Rough edge. Its 48 kHz, 24-bit WAV lasts 3.18 seconds including the tail, matches the independent VST3 within 1.2e-7 and ends with a final 100 ms peak of one 24-bit sample step. Source overwrite is rejected. Evidence remains locally in `build-next/cinder-native-export-verification.json`, `build-next/cinder-legacy-verification.json`, `build-next/cinder-listening` and `build-next/editor-previews`.
 
-## Pending native checks and limits
+## Native desktop and FL Studio
 
-Desktop interaction, system VST3 installation and FL Studio save/reopen checks remain pending. The desktop tool repeatedly reports `foreground window did not report a process id`; the owner has been asked to restore a targetable foreground window. Actual component rendering and independent host tests do not establish those native results. The system-installed VST3 is still 0.7 while the existing test host remains open.
+The desktop connection was restored and the 0.9 standalone app was inspected on screen. Selecting Ash cloud applied Grit 10%, Noise 65%, Tone Focus 3 kHz, Noise Focus 4.2 kHz, Drive 20%, Decay 0.6 s, Width 100% and Mix 65%. The Forge and Cinder sidebar icons, scroll navigation, units and preset selection worked. The native Save dialog wrote `build-next/Cinder-native-stack.bapreset`, which the native Load dialog successfully restored in FL Studio.
+
+The entire 0.9 VST3 bundle was installed in the standard system folder and verified against the build. FL Studio first opened the older Relay project with its state intact. The combined rack was loaded and saved as `build-next/Cinder-verification.flp`; after normal exit, a fresh FL Studio 24.2.2 process restored Cinder's Ash cloud settings, Forge's Soft mallet settings, their enable states and the selected Cinder page. Evidence: `build-next/Cinder-native-preview.jpg`, `build-next/Cinder-FL-recall.jpg` and `build-next/Forge-FL-recall.jpg`. Both verification apps were closed normally afterward.
+
+## Limits
 
 Noise intentionally continues after input according to Decay. Its synthesized sequence is repeatable on reset. The displayed bands illustrate settings and activity rather than a measured spectrum. Tone uses broad filters and non-oversampled nonlinear coloration, which can alias. Adding layers can raise level, so the normal export clipping check still applies. Artistic listening approval, recorded DAW automation, other hosts/devices and signing remain unqualified.
