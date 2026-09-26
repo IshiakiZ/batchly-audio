@@ -95,6 +95,15 @@ juce::AudioProcessorValueTreeState::ParameterLayout BatchlyProcessor::makeLayout
     add("forge_ceiling", "Forge ceiling (dB)", -12, 0, -1);
     add("forge_width", "Forge width", 0, 1.5f, 1);
     add("forge_mix", "Forge mix", 0, 1, 1);
+    layout.add(std::make_unique<juce::AudioParameterBool>(juce::ParameterID { "cinder_enabled", 1 }, "Cinder enabled", false));
+    add("cinder_grit", "Cinder grit", 0, 1, .35f);
+    add("cinder_noise", "Cinder noise", 0, 1, .12f);
+    add("cinder_tone", "Cinder tone focus (Hz)", 80, 12000, 1800, .35f);
+    add("cinder_texture", "Cinder noise focus (Hz)", 200, 16000, 6500, .35f);
+    add("cinder_drive", "Cinder drive", 0, 1, .3f);
+    add("cinder_decay", "Cinder decay (s)", .02f, .8f, .15f, .5f);
+    add("cinder_width", "Cinder width", 0, 1, .7f);
+    add("cinder_mix", "Cinder mix", 0, 1, 1);
     return layout;
 }
 
@@ -118,6 +127,8 @@ BatchlyProcessor::BatchlyProcessor()
     for (size_t i = 0; i < relayValues.size(); ++i) relayValues[i] = parameters.getRawParameterValue(batchly::factoryIds[6][i]);
     forgeEnabled = parameters.getRawParameterValue("forge_enabled");
     for (size_t i = 0; i < forgeValues.size(); ++i) forgeValues[i] = parameters.getRawParameterValue(batchly::factoryIds[7][i]);
+    cinderEnabled = parameters.getRawParameterValue("cinder_enabled");
+    for (size_t i = 0; i < cinderValues.size(); ++i) cinderValues[i] = parameters.getRawParameterValue(batchly::factoryIds[8][i]);
     formats.registerBasicFormats();
     if (isStandalone()) getBus(true, 0)->enable(false);
 }
@@ -186,6 +197,11 @@ batchly::RackParameters BatchlyProcessor::readRackParameters() const noexcept {
     p.forge.weightDb = forgeValues[2]->load(); p.forge.edgeDb = forgeValues[3]->load();
     p.forge.drive = forgeValues[4]->load(); p.forge.ceilingDb = forgeValues[5]->load();
     p.forge.width = forgeValues[6]->load(); p.forge.mix = forgeValues[7]->load();
+    p.cinder.enabled = cinderEnabled->load() > .5f;
+    p.cinder.grit = cinderValues[0]->load(); p.cinder.noise = cinderValues[1]->load();
+    p.cinder.toneHz = cinderValues[2]->load(); p.cinder.noiseHz = cinderValues[3]->load();
+    p.cinder.drive = cinderValues[4]->load(); p.cinder.decaySeconds = cinderValues[5]->load();
+    p.cinder.width = cinderValues[6]->load(); p.cinder.mix = cinderValues[7]->load();
     return p;
 }
 double BatchlyProcessor::getTailLengthSeconds() const {
@@ -227,6 +243,7 @@ void BatchlyProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::Midi
     brightnessLevel.store(engine.gleamHighLevel()); brightnessReduction.store(engine.gleamReduction());
     const auto echoes = engine.relayLevels(); echoLeft.store(echoes[0]); echoRight.store(echoes[1]);
     const auto drums = engine.forgeActivity(); drumAttack.store(drums[0]); drumClipping.store(drums[1]);
+    const auto texture = engine.cinderLevels(); gritLevel.store(texture[0]); textureLevel.store(texture[1]);
     const auto levels = engine.chimeLevels();
     for (size_t i = 0; i < levels.size(); ++i) resonatorLevels[i].store(levels[i]);
 }
@@ -274,7 +291,7 @@ bool BatchlyProcessor::isCurrentProgramModified() const {
 }
 void BatchlyProcessor::getStateInformation(juce::MemoryBlock& data) {
     auto state = parameters.copyState();
-    state.setProperty("schemaVersion", 8, nullptr);
+    state.setProperty("schemaVersion", 9, nullptr);
     state.setProperty("program", currentProgram.load(), nullptr);
     for (int module = 0; module < batchly::moduleCount; ++module)
         state.setProperty(batchly::programKeys[module], modulePrograms[module].load(), nullptr);

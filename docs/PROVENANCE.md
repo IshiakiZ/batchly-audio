@@ -70,6 +70,14 @@ The [official Diablo features page](https://cymatics.fm/pages/diablo-features), 
 
 Forge covers the core drum-processing role. It does not reproduce Diablo's EQ modes, subharmonic resonator, bitcrushing modes or complete equalizer. See `FORGE-VERIFICATION.md` for checks and limits.
 
+## Cinder
+
+The [official Corrosion description](https://cymatics.fm/products/corrosion-tonal-noise-enhancer), consulted September 26, 2026, identifies independent noise and tonal enhancement with frequency shaping and blend. Cinder implements that musical role using original processing, presets and artwork. No commercial binary internals, code, presets or audio assets were used.
+
+`src/CinderEngine.h` adds two independent layers to the original input. The tonal path filters around a selected center, creates a driven-minus-undriven soft-curve difference, and filters the result again. The noise path uses a fixed-seed xorshift generator and its own broad band filters, multiplied by a linked input envelope with adjustable release. Width narrows the tonal addition and changes noise correlation with equal-power normalization; the dry stereo image remains intact. Noise advances deterministically across block sizes. There is no idle hiss without prior input. All processing state is fixed-size and allocated before processing.
+
+The five presets, grain icon and dotted-band illustration are original. The display indicates control regions and measured layer activity, not a measured spectrum. This is an original texture effect rather than an exact recreation of Corrosion's algorithms. Its nonlinear layer is not oversampled. See `CINDER-VERIFICATION.md` for checks and remaining limits.
+
 ## Framework
 
 JUCE 9.0.2 is pinned to commit `72782788ce18c2d4d760b28e0921d6ffc6431102`. It supplies the GUI, audio-device management, file reading/writing, parameter management, and VST3/standalone wrappers. It does not implement Drift's effect algorithm.
