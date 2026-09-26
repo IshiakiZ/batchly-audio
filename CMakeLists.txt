@@ -42,6 +42,9 @@ add_test(NAME ember_dsp COMMAND ember_tests)
 add_executable(vista_tests tests/VistaTests.cpp)
 target_include_directories(vista_tests PRIVATE src)
 add_test(NAME vista_dsp COMMAND vista_tests)
+add_executable(quartz_tests tests/QuartzTests.cpp)
+target_include_directories(quartz_tests PRIVATE src)
+add_test(NAME quartz_dsp COMMAND quartz_tests)
 
 if(BATCHLY_BUILD_APP)
     # Pin the framework so a fresh checkout builds against the same audio wrapper.
