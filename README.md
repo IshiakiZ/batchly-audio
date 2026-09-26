@@ -1,6 +1,6 @@
 # Batchly Audio
 
-An original open-source audio collection for Windows and VST3 hosts. Version 0.5 adds **Helix**, a stereo phaser, alongside **Drift** chorus/vibrato, **Patina** tape coloration, **Atrium** reverb and **Chime** harmonic resonance. Each effect has its own controls, illustration and sidebar icon.
+An original open-source audio collection for Windows and VST3 hosts. Version 0.6 adds **Gleam**, a presence and air enhancer, alongside **Drift** chorus/vibrato, **Patina** tape coloration, **Atrium** reverb, **Chime** harmonic resonance and **Helix** stereo phasing. Each effect has its own controls, illustration and sidebar icon.
 
 Drift combines smooth randomized delay modulation, periodic modulation, stereo spread, an envelope-controlled low-pass filter and optional generated hiss. Its sound engine, layout, presets, graphics and demo audio were written for this project. It does not load or require a Cymatics plugin.
 
@@ -12,13 +12,13 @@ The desktop app can open or accept a dropped mono/stereo WAV, AIFF, FLAC, MP3 or
 
 ## The rack and Patina
 
-Select an effect in the sidebar, then click its **ON/OFF** button to enable or disable it. Each sidebar button shows its effect's on/off state; the collection scrolls when needed. Selecting a page only changes the controls you see; it does not change the audio routing. Audio flows through **Drift, Patina, Atrium, Chime, then Helix**, followed by shared Output. **BYPASS** bypasses the whole rack. New instances start with Drift on, the other effects off.
+Select an effect in the sidebar, then click its **ON/OFF** button to enable or disable it. Each sidebar button shows its effect's on/off state; the collection scrolls when needed. Selecting a page only changes the controls you see; it does not change the audio routing. Audio flows through **Drift, Patina, Atrium, Chime, Helix, then Gleam**, followed by shared Output. **BYPASS** bypasses the whole rack. New instances start with Drift on, the other effects off.
 
 Patina's **Sample rate** softens high frequencies through a filtered rate reducer. **Drive** adds original soft saturation; **Wear** and **Flutter** add slow and fast pitch variation. **Hiss** generates noise, **Chorus** adds a stereo voice, **Tone** rolls off the top end, and **Mix** blends the effect. Hiss defaults to zero. Rates above the host's rate use the host rate; the tape display shows the effective rate. Its filters have finite slopes and are not brick-wall filters.
 
-Try **Fresh spool**, **Pocket cassette**, **Submerged**, **Sun-bleached**, and **Midnight dub**. The on-screen preset menu affects the displayed effect and enables it. DAW program selection recalls a single-effect starting point. Saved `.bapreset` files contain the entire rack. The wet tape path has an intentional variable delay of approximately 9-25 ms; partially wet settings can add comb coloration. The rack still reports zero latency because its dry path is immediate. With Atrium, Chime and Helix off, exports include a 160 ms tail when Patina is enabled.
+Try **Fresh spool**, **Pocket cassette**, **Submerged**, **Sun-bleached**, and **Midnight dub**. The on-screen preset menu affects the displayed effect and enables it. DAW program selection recalls a single-effect starting point. Saved `.bapreset` files contain the entire rack. The wet tape path has an intentional variable delay of approximately 9-25 ms; partially wet settings can add comb coloration. The rack still reports zero latency because its dry path is immediate. With Atrium, Chime, Helix and Gleam off, exports include a 160 ms tail when Patina is enabled.
 
-Existing 0.1 Drift projects and presets load with Drift enabled and Patina disabled. Version 0.1 and 0.2 states both load with Atrium off. Original parameter IDs, order, plugin identity and the first twenty host program names remain unchanged.
+Existing 0.1 Drift projects and presets load with Drift enabled and Patina disabled. Version 0.1 and 0.2 states both load with Atrium off. Original parameter IDs, order, plugin identity and the first twenty-five host program names remain unchanged.
 
 ## Atrium
 
@@ -28,7 +28,7 @@ Select **Atrium**, then turn **ATRIUM OFF** on. Try **Open atrium**, **Close wal
 
 The room illustration responds to Size and the measured wet level; it is not a measured acoustic response. Size and pre-delay changes can bend the tail's pitch. Atrium is one original room algorithm with five starting points, not a physical room model or a set of sampled impulse responses.
 
-With Atrium enabled, exports reserve twice Decay, plus Pre-delay and 0.8 seconds, for the tail. The VST3 reports the same allowance to its host. A DAW can still apply its own render-tail setting. With Atrium, Chime and Helix off, exports retain the earlier 80 ms allowance, or 160 ms when Patina is on. Processing adds no delay to the dry path.
+With Atrium enabled, exports reserve twice Decay, plus Pre-delay and 0.8 seconds, for the tail. The VST3 reports the same allowance to its host. A DAW can still apply its own render-tail setting. With Atrium, Chime, Helix and Gleam off, exports retain the earlier 80 ms allowance, or 160 ms when Patina is on. Processing adds no delay to the dry path.
 
 **Save** and **Load** store `.bapreset` files. A DAW also saves the plugin's controls in its project. The starting-point menu selects factory settings; controls can then be edited freely.
 
@@ -49,6 +49,14 @@ Select **Helix**, then try **Slow orbit**, **Silver sweep**, **Deep current**, *
 **Mix** near 50% produces moving cancellations between dry and phase-shifted audio. At 100% wet, those dry/wet cancellations disappear; you hear phase rotation, tone and feedback instead. The eight-stage engine and its orbital illustration are original designs. The display shows sweep positions, not a measured spectrum. Rate is in Hz without host tempo synchronization.
 
 Helix adds a 1.5-second tail allowance to exports and the VST3 host report when enabled. States from 0.1 through 0.4 load with Helix off. Existing parameter IDs, order, plugin identity and the first twenty host programs are retained.
+
+## Gleam
+
+Select **Gleam**, then try **Clear vocal**, **Silver top**, **Drum shine**, **Soft lift**, or **Open mix**. **Presence** adds a broad upper-mid lift, while **Air** raises the top end above **Focus**. The bands overlap gently; they are not surgical EQ bands. Their dB amounts set the individual lift gains and do not simply add together.
+
+**Excite** adds soft harmonic color to the high-frequency layer. **Tame** turns down the added brightness during strong high-frequency peaks; it is not a full-signal de-esser. **Width** narrows or widens only the added layer while preserving the dry stereo image. It cannot create stereo width from a mono input. **Trim** compensates for added level inside Gleam, and **Mix** blends with the original. Turn Presence, Air and Excite to zero and Trim to 0 dB for a neutral signal.
+
+The prism illustration responds to measured high-frequency input level, and Tame shows the reduction of the added layer. Focus is limited by the host sample rate. The enhancer uses broad first-order filters and original nonlinear coloration; it is not an exact recreation of Halo's macros. Gleam adds 80 ms to the tail allowance when enabled and stays off when loading older projects.
 
 ## FL Studio and other VST3 hosts
 

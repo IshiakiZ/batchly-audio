@@ -9,9 +9,10 @@ Inventory refreshed September 26, 2026 from installed VST3 filenames and public 
 3. Space-inspired spatial processing: Atrium, added in 0.3 with an original modulated room network, decay, pre-delay, damping, low cut and width.
 4. Gamma-inspired harmonic resonance: Chime, added in 0.4 with an original tuned modal bank, scale selection, two octaves, decay, stereo detuning and motion.
 5. Space Cadet-inspired stereo phasing: Helix, added in 0.5 with eight original all-pass stages, signed feedback, moving stereo notches and input coloration.
-6. Focused delay and filter effects: establish one small, verified module at a time.
-7. Larger multi-effect and vocal processors: only after their component effects work.
-8. Instruments and MIDI tools: separate designs and original or redistributable sound sources.
+6. Halo-inspired presence and air: Gleam, added in 0.6 with overlapping brightness bands, original excitation, peak-dependent taming and width limited to the added layer.
+7. Focused delay and filter effects: establish one small, verified module at a time.
+8. Larger multi-effect and vocal processors: only after their component effects work.
+9. Instruments and MIDI tools: separate designs and original or redistributable sound sources.
 
 The order after Drift is provisional. Category names below describe the installed plugin metadata, not a completed feature specification.
 

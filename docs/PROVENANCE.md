@@ -46,6 +46,14 @@ Original choices include staggered stage frequencies, sine sweeps across a logar
 
 See `HELIX-VERIFICATION.md` for the checks and remaining limits.
 
+## Gleam
+
+The [official Cymatics site](https://cymatics.fm/) identifies Halo's musical role as adding air, clarity and high-end shine. Its installed VST3 host interface was inspected on September 26, 2026, and original impulse probes confirmed upper-frequency enhancement without a sustained reverb tail. Those observations establish a broad role only. No private algorithm, code, factory preset, artwork or reference-processed audio is incorporated or distributed.
+
+`src/GleamEngine.h` uses independently designed parallel first-order high-frequency layers: a fixed presence region and a variable air region. Trapezoidal integrators give complementary high-pass paths with unity response at Nyquist. Original soft-curve excitation adds harmonic content and is filtered again to reduce bass leakage. Linked peak detection attenuates only the added layer, with width, trim and dry/wet blending afterward. The fixed arrays allocate no processing memory. This is a presence/air enhancer, not a recreation of Halo's named macro chains. The nonlinear path is not claimed to be alias-free.
+
+The five presets, prism/ray artwork and diamond icon are original. Gleam follows Helix, with old states keeping it off. See `GLEAM-VERIFICATION.md` for actual checks and limits.
+
 ## Framework
 
 JUCE 9.0.2 is pinned to commit `72782788ce18c2d4d760b28e0921d6ffc6431102`. It supplies the GUI, audio-device management, file reading/writing, parameter management, and VST3/standalone wrappers. It does not implement Drift's effect algorithm.

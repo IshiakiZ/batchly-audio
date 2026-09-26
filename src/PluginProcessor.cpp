@@ -68,6 +68,15 @@ juce::AudioProcessorValueTreeState::ParameterLayout BatchlyProcessor::makeLayout
     add("helix_drive", "Helix drive", 0, 1, .1f);
     add("helix_width", "Helix width", 0, 1, .75f);
     add("helix_mix", "Helix mix", 0, 1, .5f);
+    layout.add(std::make_unique<juce::AudioParameterBool>(juce::ParameterID { "gleam_enabled", 1 }, "Gleam enabled", false));
+    add("gleam_presence", "Gleam presence (dB)", 0, 9, 2.5f);
+    add("gleam_air", "Gleam air (dB)", 0, 12, 4);
+    add("gleam_focus", "Gleam focus (Hz)", 4000, 14000, 7500, .5f);
+    add("gleam_excite", "Gleam excite", 0, 1, .15f);
+    add("gleam_tame", "Gleam tame", 0, 1, .5f);
+    add("gleam_width", "Gleam width", 0, 1.5f, 1);
+    add("gleam_trim", "Gleam trim (dB)", -12, 0, -3);
+    add("gleam_mix", "Gleam mix", 0, 1, 1);
     return layout;
 }
 
@@ -85,6 +94,8 @@ BatchlyProcessor::BatchlyProcessor()
     for (size_t i = 0; i < chimeValues.size(); ++i) chimeValues[i] = parameters.getRawParameterValue(batchly::factoryIds[3][i]);
     helixEnabled = parameters.getRawParameterValue("helix_enabled");
     for (size_t i = 0; i < helixValues.size(); ++i) helixValues[i] = parameters.getRawParameterValue(batchly::factoryIds[4][i]);
+    gleamEnabled = parameters.getRawParameterValue("gleam_enabled");
+    for (size_t i = 0; i < gleamValues.size(); ++i) gleamValues[i] = parameters.getRawParameterValue(batchly::factoryIds[5][i]);
     formats.registerBasicFormats();
     if (isStandalone()) getBus(true, 0)->enable(false);
 }
@@ -138,6 +149,11 @@ batchly::RackParameters BatchlyProcessor::readRackParameters() const noexcept {
     p.helix.feedback = helixValues[2]->load(); p.helix.centerHz = helixValues[3]->load();
     p.helix.toneHz = helixValues[4]->load(); p.helix.drive = helixValues[5]->load();
     p.helix.width = helixValues[6]->load(); p.helix.mix = helixValues[7]->load();
+    p.gleam.enabled = gleamEnabled->load() > .5f;
+    p.gleam.presenceDb = gleamValues[0]->load(); p.gleam.airDb = gleamValues[1]->load();
+    p.gleam.focusHz = gleamValues[2]->load(); p.gleam.excite = gleamValues[3]->load();
+    p.gleam.tame = gleamValues[4]->load(); p.gleam.width = gleamValues[5]->load();
+    p.gleam.trimDb = gleamValues[6]->load(); p.gleam.mix = gleamValues[7]->load();
     return p;
 }
 double BatchlyProcessor::getTailLengthSeconds() const {
@@ -176,6 +192,7 @@ void BatchlyProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::Midi
     tapeMovement.store(engine.tapeMotion()[0]);
     reverbLevel.store(engine.reverbPeak());
     const auto sweep = engine.helixSweep(); phaserLeft.store(sweep[0]); phaserRight.store(sweep[1]);
+    brightnessLevel.store(engine.gleamHighLevel()); brightnessReduction.store(engine.gleamReduction());
     const auto levels = engine.chimeLevels();
     for (size_t i = 0; i < levels.size(); ++i) resonatorLevels[i].store(levels[i]);
 }
@@ -223,7 +240,7 @@ bool BatchlyProcessor::isCurrentProgramModified() const {
 }
 void BatchlyProcessor::getStateInformation(juce::MemoryBlock& data) {
     auto state = parameters.copyState();
-    state.setProperty("schemaVersion", 5, nullptr);
+    state.setProperty("schemaVersion", 6, nullptr);
     state.setProperty("program", currentProgram.load(), nullptr);
     for (int module = 0; module < batchly::moduleCount; ++module)
         state.setProperty(batchly::programKeys[module], modulePrograms[module].load(), nullptr);
