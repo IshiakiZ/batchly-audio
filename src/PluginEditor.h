@@ -39,6 +39,7 @@ private:
     void drawResonator(juce::Graphics&);
     void drawPhaser(juce::Graphics&);
     void drawEnhancer(juce::Graphics&);
+    void drawDelay(juce::Graphics&);
     BatchlyProcessor& processor;
     DeckLookAndFeel look;
     std::array<juce::Slider, 9> knobs;

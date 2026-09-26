@@ -54,6 +54,14 @@ The [official Cymatics site](https://cymatics.fm/) identifies Halo's musical rol
 
 The five presets, prism/ray artwork and diamond icon are original. Gleam follows Helix, with old states keeping it off. See `GLEAM-VERIFICATION.md` for actual checks and limits.
 
+## Relay
+
+The [official Illusion description](https://cymatics.fm/products/illusion-creative-delay-2025), consulted September 26, 2026, describes echo timing, feedback, filtering, pitch movement, glide and ping-pong behavior. Relay fills that broad creative-delay role with an independently written fractional stereo delay. No commercial code, factory settings, graphics, recordings or binary internals were used.
+
+`src/RelayEngine.h` uses two preallocated circular buffers, linear interpolation, a sine-modulated read distance, smoothed time glide, low-pass and bass-removal filters, a convex stereo feedback matrix and a bounded soft write curve. At full bounce the mono input enters the left buffer first and feedback alternates channels. Disabled history is invalidated without clearing multi-second buffers on the audio thread. Tail allowance follows the longest repeat interval and a nominal -80 dB feedback decay. This is not a BBD circuit emulation, tempo-synchronized delay or pitch sequencer.
+
+The five presets, repeated-block display and staggered echo icon are original. Relay follows Gleam; old states keep it off. See `RELAY-VERIFICATION.md` for checked behavior and limits.
+
 ## Framework
 
 JUCE 9.0.2 is pinned to commit `72782788ce18c2d4d760b28e0921d6ffc6431102`. It supplies the GUI, audio-device management, file reading/writing, parameter management, and VST3/standalone wrappers. It does not implement Drift's effect algorithm.

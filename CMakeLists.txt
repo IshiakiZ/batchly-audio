@@ -27,6 +27,9 @@ add_test(NAME helix_dsp COMMAND helix_tests)
 add_executable(gleam_tests tests/GleamTests.cpp)
 target_include_directories(gleam_tests PRIVATE src)
 add_test(NAME gleam_dsp COMMAND gleam_tests)
+add_executable(relay_tests tests/RelayTests.cpp)
+target_include_directories(relay_tests PRIVATE src)
+add_test(NAME relay_dsp COMMAND relay_tests)
 
 if(BATCHLY_BUILD_APP)
     # Pin the framework so a fresh checkout builds against the same audio wrapper.
@@ -46,7 +49,7 @@ if(BATCHLY_BUILD_APP)
         PLUGIN_CODE Badr
         FORMATS VST3 Standalone
         PRODUCT_NAME "Batchly Audio"
-        DESCRIPTION "Original modulation, tape color, reverb, resonance, phasing and brightness"
+        DESCRIPTION "Original modulation, tape color, reverb, resonance, phasing, brightness and echoes"
         IS_SYNTH FALSE
         NEEDS_MIDI_INPUT FALSE
         NEEDS_MIDI_OUTPUT FALSE
