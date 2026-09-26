@@ -1,4 +1,4 @@
-Current addition: [Vista 0.11 verification](VISTA-VERIFICATION.md). Previous addition: [Ember 0.10 verification](EMBER-VERIFICATION.md). Earlier records below describe their tested versions.
+Current addition: [Quartz 0.12 verification](QUARTZ-VERIFICATION.md). Previous addition: [Vista 0.11 verification](VISTA-VERIFICATION.md). Earlier records below describe their tested versions.
 
 # Drift 0.1 verification record
 

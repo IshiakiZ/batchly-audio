@@ -76,6 +76,16 @@ int main(int argc, char** argv) {
                             slider->setValue(slider->getValueFromText("173 %"),juce::sendNotificationSync);
                             require(std::abs(processor.readRackParameters().vista.highWidth-1.73f)<.0001f,"Vista width percent conversion failed");
                         }
+                        if (module == 11 && slider->getName() == "LOW") {
+                            require(formatted.contains("dB"),"Quartz low gain has the wrong unit");
+                            slider->setValue(slider->getValueFromText("-3.7 dB"),juce::sendNotificationSync);
+                            require(std::abs(processor.readRackParameters().quartz.lowDb+3.7f)<.0001f,"Quartz signed gain conversion failed");
+                        }
+                        if (module == 11 && slider->getName() == "RELEASE") {
+                            require(formatted.contains("ms"),"Quartz release has the wrong unit");
+                            slider->setValue(slider->getValueFromText("237 ms"),juce::sendNotificationSync);
+                            require(std::abs(processor.readRackParameters().quartz.releaseMs-237)<.001f,"Quartz release attachment failed");
+                        }
                     }
                     if (auto* combo = dynamic_cast<juce::ComboBox*>(child))
                         if (combo->getNumItems() == batchly::presetsPerModule && combo->getName().isEmpty()) presetMenu = combo;

@@ -96,6 +96,14 @@ Horizon is used as a broad stereo-imaging reference. Its installed VST3's public
 
 The five presets, outward-arrow icon and three-region width drawing are original. Meter bars show measured mid and side peaks. Older projects leave Vista off. See `VISTA-VERIFICATION.md` for checks and limits.
 
+## Quartz
+
+24K's installed VST3 public host interface, inspected September 26, 2026, exposes input/output gain, low/mid/high tone, character and limiting. These establish the broad mastering role only. No commercial source, binary internals, factory presets, graphics or audio assets were inspected or incorporated.
+
+`src/QuartzEngine.h` independently uses complementary first-order tone layers around 180 Hz and 3.5 kHz, a blended soft tanh curve and one stereo-linked limiter gain. Instantaneous attack limits fully wet sample peaks; an adjustable exponential release restores gain. Zero tone gains and Character give a linear, exactly neutral path below the ceiling. Parameters smooth over 25 ms, filter state is fixed-size, and processing allocates no memory. The five presets, faceted crystal icon, tone-setting display and gain-reduction bar are original.
+
+Quartz is a broad mix-finishing processor rather than a physical circuit model. It adds adjustable limiter release instead of reproducing 24K's internal behavior. There is no lookahead or true-peak guarantee. Dry blend, enable transitions and shared Output can exceed the wet ceiling. See `QUARTZ-VERIFICATION.md` for evidence and limits.
+
 ## Framework
 
 JUCE 9.0.2 is pinned to commit `72782788ce18c2d4d760b28e0921d6ffc6431102`. It supplies the GUI, audio-device management, file reading/writing, parameter management, and VST3/standalone wrappers. It does not implement Drift's effect algorithm.

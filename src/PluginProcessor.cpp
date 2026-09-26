@@ -122,6 +122,15 @@ juce::AudioProcessorValueTreeState::ParameterLayout BatchlyProcessor::makeLayout
     add("vista_spread", "Vista spread", 0, 1, 0);
     add("vista_delay", "Vista delay (ms)", 1, 30, 11);
     add("vista_mix", "Vista mix", 0, 1, 1);
+    layout.add(std::make_unique<juce::AudioParameterBool>(juce::ParameterID { "quartz_enabled", 1 }, "Quartz enabled", false));
+    add("quartz_input", "Quartz input (dB)", -12, 12, 0);
+    add("quartz_low", "Quartz low (dB)", -9, 9, 0);
+    add("quartz_mid", "Quartz mid (dB)", -9, 9, 0);
+    add("quartz_high", "Quartz high (dB)", -9, 9, 0);
+    add("quartz_character", "Quartz character", 0, 1, 0);
+    add("quartz_ceiling", "Quartz ceiling (dB)", -12, 0, -1);
+    add("quartz_release", "Quartz release (ms)", 20, 500, 120, .5f);
+    add("quartz_mix", "Quartz mix", 0, 1, 1);
     return layout;
 }
 
@@ -151,6 +160,8 @@ BatchlyProcessor::BatchlyProcessor()
     for (size_t i = 0; i < emberValues.size(); ++i) emberValues[i] = parameters.getRawParameterValue(batchly::factoryIds[9][i]);
     vistaEnabled = parameters.getRawParameterValue("vista_enabled");
     for (size_t i = 0; i < vistaValues.size(); ++i) vistaValues[i] = parameters.getRawParameterValue(batchly::factoryIds[10][i]);
+    quartzEnabled = parameters.getRawParameterValue("quartz_enabled");
+    for (size_t i = 0; i < quartzValues.size(); ++i) quartzValues[i] = parameters.getRawParameterValue(batchly::factoryIds[11][i]);
     formats.registerBasicFormats();
     if (isStandalone()) getBus(true, 0)->enable(false);
 }
@@ -234,6 +245,11 @@ batchly::RackParameters BatchlyProcessor::readRackParameters() const noexcept {
     p.vista.highWidth = vistaValues[2]->load(); p.vista.lowHz = vistaValues[3]->load();
     p.vista.highHz = vistaValues[4]->load(); p.vista.spread = vistaValues[5]->load();
     p.vista.delayMs = vistaValues[6]->load(); p.vista.mix = vistaValues[7]->load();
+    p.quartz.enabled = quartzEnabled->load() > .5f;
+    p.quartz.inputDb = quartzValues[0]->load(); p.quartz.lowDb = quartzValues[1]->load();
+    p.quartz.midDb = quartzValues[2]->load(); p.quartz.highDb = quartzValues[3]->load();
+    p.quartz.character = quartzValues[4]->load(); p.quartz.ceilingDb = quartzValues[5]->load();
+    p.quartz.releaseMs = quartzValues[6]->load(); p.quartz.mix = quartzValues[7]->load();
     return p;
 }
 double BatchlyProcessor::getTailLengthSeconds() const {
@@ -278,6 +294,7 @@ void BatchlyProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::Midi
     const auto texture = engine.cinderLevels(); gritLevel.store(texture[0]); textureLevel.store(texture[1]);
     const auto bass = engine.emberLevels(); bassInput.store(bass[0]); bassWet.store(bass[1]);
     const auto stereo = engine.vistaLevels(); stereoMid.store(stereo[0]); stereoSide.store(stereo[1]);
+    masterReduction.store(engine.quartzReduction());
     const auto levels = engine.chimeLevels();
     for (size_t i = 0; i < levels.size(); ++i) resonatorLevels[i].store(levels[i]);
 }
@@ -325,7 +342,7 @@ bool BatchlyProcessor::isCurrentProgramModified() const {
 }
 void BatchlyProcessor::getStateInformation(juce::MemoryBlock& data) {
     auto state = parameters.copyState();
-    state.setProperty("schemaVersion", 11, nullptr);
+    state.setProperty("schemaVersion", 12, nullptr);
     state.setProperty("program", currentProgram.load(), nullptr);
     for (int module = 0; module < batchly::moduleCount; ++module)
         state.setProperty(batchly::programKeys[module], modulePrograms[module].load(), nullptr);

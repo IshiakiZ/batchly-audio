@@ -42,6 +42,9 @@ add_test(NAME ember_dsp COMMAND ember_tests)
 add_executable(vista_tests tests/VistaTests.cpp)
 target_include_directories(vista_tests PRIVATE src)
 add_test(NAME vista_dsp COMMAND vista_tests)
+add_executable(quartz_tests tests/QuartzTests.cpp)
+target_include_directories(quartz_tests PRIVATE src)
+add_test(NAME quartz_dsp COMMAND quartz_tests)
 
 if(BATCHLY_BUILD_APP)
     # Pin the framework so a fresh checkout builds against the same audio wrapper.
@@ -61,7 +64,7 @@ if(BATCHLY_BUILD_APP)
         PLUGIN_CODE Badr
         FORMATS VST3 Standalone
         PRODUCT_NAME "Batchly Audio"
-        DESCRIPTION "Original modulation, tape color, reverb, resonance, phasing, brightness, echoes, drum shaping, texture, bass saturation and stereo imaging"
+        DESCRIPTION "Original modulation, tape color, reverb, resonance, phasing, brightness, echoes, drum shaping, texture, bass saturation, stereo imaging and mastering"
         IS_SYNTH FALSE
         NEEDS_MIDI_INPUT FALSE
         NEEDS_MIDI_OUTPUT FALSE

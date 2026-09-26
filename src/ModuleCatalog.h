@@ -5,11 +5,11 @@
 namespace batchly {
 // One small table keeps navigation and saved program numbers in the same order.
 // New modules are appended so existing DAW automation and programs stay stable.
-inline constexpr int moduleCount = 11;
+inline constexpr int moduleCount = 12;
 inline constexpr int presetsPerModule = 5;
-inline constexpr const char* moduleNames[moduleCount] { "Drift", "Patina", "Atrium", "Chime", "Helix", "Gleam", "Relay", "Forge", "Cinder", "Ember", "Vista" };
-inline constexpr const char* enabledIds[moduleCount] { "drift_enabled", "patina_enabled", "atrium_enabled", "chime_enabled", "helix_enabled", "gleam_enabled", "relay_enabled", "forge_enabled", "cinder_enabled", "ember_enabled", "vista_enabled" };
-inline constexpr const char* programKeys[moduleCount] { "driftProgram", "patinaProgram", "atriumProgram", "chimeProgram", "helixProgram", "gleamProgram", "relayProgram", "forgeProgram", "cinderProgram", "emberProgram", "vistaProgram" };
+inline constexpr const char* moduleNames[moduleCount] { "Drift", "Patina", "Atrium", "Chime", "Helix", "Gleam", "Relay", "Forge", "Cinder", "Ember", "Vista", "Quartz" };
+inline constexpr const char* enabledIds[moduleCount] { "drift_enabled", "patina_enabled", "atrium_enabled", "chime_enabled", "helix_enabled", "gleam_enabled", "relay_enabled", "forge_enabled", "cinder_enabled", "ember_enabled", "vista_enabled", "quartz_enabled" };
+inline constexpr const char* programKeys[moduleCount] { "driftProgram", "patinaProgram", "atriumProgram", "chimeProgram", "helixProgram", "gleamProgram", "relayProgram", "forgeProgram", "cinderProgram", "emberProgram", "vistaProgram", "quartzProgram" };
 inline constexpr const char* presetNames[moduleCount][presetsPerModule] {
     { "Soft focus", "Slow tide", "Wide room", "Worn motor", "Pure vibrato" },
     { "Fresh spool", "Pocket cassette", "Submerged", "Sun-bleached", "Midnight dub" },
@@ -21,9 +21,10 @@ inline constexpr const char* presetNames[moduleCount][presetsPerModule] {
     { "First strike", "Heavy floor", "Snare press", "Soft mallet", "Parallel iron" },
     { "Fine grain", "Copper dust", "Paper speaker", "Ash cloud", "Rough edge" },
     { "Warm foundation", "Wire bass", "Dense floor", "Folded metal", "Quiet ember" },
-    { "Open window", "Centered bass", "Mono bloom", "Narrow room", "Air frame" }
+    { "Open window", "Centered bass", "Mono bloom", "Narrow room", "Air frame" },
+    { "Clear finish", "Warm facets", "Bright polish", "Dense cut", "Soft edges" }
 };
-inline constexpr int factoryControlCount[moduleCount] { 9, 8, 8, 11, 8, 8, 8, 8, 8, 8, 8 };
+inline constexpr int factoryControlCount[moduleCount] { 9, 8, 8, 11, 8, 8, 8, 8, 8, 8, 8, 8 };
 inline constexpr const char* factoryIds[moduleCount][11] {
     { "depth", "rate", "wander", "tone", "follow", "noise", "width", "mix", "output" },
     { "patina_sample", "patina_drive", "patina_wear", "patina_flutter", "patina_hiss", "patina_chorus", "patina_tone", "patina_mix" },
@@ -35,7 +36,8 @@ inline constexpr const char* factoryIds[moduleCount][11] {
     { "forge_punch", "forge_body", "forge_weight", "forge_edge", "forge_drive", "forge_ceiling", "forge_width", "forge_mix" },
     { "cinder_grit", "cinder_noise", "cinder_tone", "cinder_texture", "cinder_drive", "cinder_decay", "cinder_width", "cinder_mix" },
     { "ember_drive", "ember_shape", "ember_color", "ember_filter", "ember_anchor", "ember_bias", "ember_trim", "ember_mix" },
-    { "vista_low", "vista_mid", "vista_high", "vista_low_split", "vista_high_split", "vista_spread", "vista_delay", "vista_mix" }
+    { "vista_low", "vista_mid", "vista_high", "vista_low_split", "vista_high_split", "vista_spread", "vista_delay", "vista_mix" },
+    { "quartz_input", "quartz_low", "quartz_mid", "quartz_high", "quartz_character", "quartz_ceiling", "quartz_release", "quartz_mix" }
 };
 inline constexpr float factoryValues[moduleCount][presetsPerModule][11] {
     {
@@ -98,6 +100,12 @@ inline constexpr float factoryValues[moduleCount][presetsPerModule][11] {
         {1,1,1,250,3500,.65f,17,1},
         {.5f,.65f,.8f,180,4000,0,11,1},
         {.7f,1,1.8f,200,4500,.2f,7,.75f}
+    }, {
+        {1,0,0,.5f,.05f,-1,120,1},
+        {2,2,-.5f,-1,.25f,-1.5f,180,1},
+        {1,-1,.5f,2,.1f,-1,90,1},
+        {6,1,1,.5f,.15f,-3,220,1},
+        {0,0,-1,-1.5f,.45f,-2,250,.75f}
     }
 };
 }
