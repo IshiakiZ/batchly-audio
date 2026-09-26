@@ -1,4 +1,4 @@
-Current addition: [Quartz 0.12 verification](QUARTZ-VERIFICATION.md). Previous addition: [Vista 0.11 verification](VISTA-VERIFICATION.md). Earlier records below describe their tested versions.
+Current addition: [Silk 0.13 verification](SILK-VERIFICATION.md). Previous addition: [Quartz 0.12 verification](QUARTZ-VERIFICATION.md). Earlier records below describe their tested versions.
 
 # Drift 0.1 verification record
 

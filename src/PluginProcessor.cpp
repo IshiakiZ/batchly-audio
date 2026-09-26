@@ -131,6 +131,16 @@ juce::AudioProcessorValueTreeState::ParameterLayout BatchlyProcessor::makeLayout
     add("quartz_ceiling", "Quartz ceiling (dB)", -12, 0, -1);
     add("quartz_release", "Quartz release (ms)", 20, 500, 120, .5f);
     add("quartz_mix", "Quartz mix", 0, 1, 1);
+    layout.add(std::make_unique<juce::AudioParameterBool>(juce::ParameterID { "silk_enabled", 1 }, "Silk enabled", false));
+    add("silk_depth", "Silk depth (dB)", 0, 18, 9);
+    add("silk_selectivity", "Silk selectivity", 0, 1, .45f);
+    add("silk_low", "Silk low (Hz)", 80, 2000, 700, .5f);
+    add("silk_high", "Silk high (Hz)", 2500, 18000, 12000, .5f);
+    add("silk_attack", "Silk attack (ms)", .5f, 100, 8, .5f);
+    add("silk_release", "Silk release (ms)", 20, 800, 150, .5f);
+    add("silk_trim", "Silk trim (dB)", -12, 6, 0);
+    add("silk_mix", "Silk mix", 0, 1, 1);
+    layout.add(std::make_unique<juce::AudioParameterBool>(juce::ParameterID { "silk_listen", 1 }, "Silk listen", false));
     return layout;
 }
 
@@ -162,6 +172,8 @@ BatchlyProcessor::BatchlyProcessor()
     for (size_t i = 0; i < vistaValues.size(); ++i) vistaValues[i] = parameters.getRawParameterValue(batchly::factoryIds[10][i]);
     quartzEnabled = parameters.getRawParameterValue("quartz_enabled");
     for (size_t i = 0; i < quartzValues.size(); ++i) quartzValues[i] = parameters.getRawParameterValue(batchly::factoryIds[11][i]);
+    silkEnabled = parameters.getRawParameterValue("silk_enabled");
+    for (size_t i = 0; i < silkValues.size(); ++i) silkValues[i] = parameters.getRawParameterValue(batchly::factoryIds[12][i]);
     formats.registerBasicFormats();
     if (isStandalone()) getBus(true, 0)->enable(false);
 }
@@ -250,6 +262,12 @@ batchly::RackParameters BatchlyProcessor::readRackParameters() const noexcept {
     p.quartz.midDb = quartzValues[2]->load(); p.quartz.highDb = quartzValues[3]->load();
     p.quartz.character = quartzValues[4]->load(); p.quartz.ceilingDb = quartzValues[5]->load();
     p.quartz.releaseMs = quartzValues[6]->load(); p.quartz.mix = quartzValues[7]->load();
+    p.silk.enabled = silkEnabled->load() > .5f;
+    p.silk.depthDb = silkValues[0]->load(); p.silk.selectivity = silkValues[1]->load();
+    p.silk.lowHz = silkValues[2]->load(); p.silk.highHz = silkValues[3]->load();
+    p.silk.attackMs = silkValues[4]->load(); p.silk.releaseMs = silkValues[5]->load();
+    p.silk.trimDb = silkValues[6]->load(); p.silk.mix = silkValues[7]->load();
+    p.silk.listen = silkValues[8]->load() > .5f;
     return p;
 }
 double BatchlyProcessor::getTailLengthSeconds() const {
@@ -295,6 +313,7 @@ void BatchlyProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::Midi
     const auto bass = engine.emberLevels(); bassInput.store(bass[0]); bassWet.store(bass[1]);
     const auto stereo = engine.vistaLevels(); stereoMid.store(stereo[0]); stereoSide.store(stereo[1]);
     masterReduction.store(engine.quartzReduction());
+    for (size_t i = 0; i < silkReductions.size(); ++i) silkReductions[i].store(engine.silkReduction()[i]);
     const auto levels = engine.chimeLevels();
     for (size_t i = 0; i < levels.size(); ++i) resonatorLevels[i].store(levels[i]);
 }
@@ -342,7 +361,7 @@ bool BatchlyProcessor::isCurrentProgramModified() const {
 }
 void BatchlyProcessor::getStateInformation(juce::MemoryBlock& data) {
     auto state = parameters.copyState();
-    state.setProperty("schemaVersion", 12, nullptr);
+    state.setProperty("schemaVersion", 13, nullptr);
     state.setProperty("program", currentProgram.load(), nullptr);
     for (int module = 0; module < batchly::moduleCount; ++module)
         state.setProperty(batchly::programKeys[module], modulePrograms[module].load(), nullptr);

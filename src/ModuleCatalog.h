@@ -5,11 +5,11 @@
 namespace batchly {
 // One small table keeps navigation and saved program numbers in the same order.
 // New modules are appended so existing DAW automation and programs stay stable.
-inline constexpr int moduleCount = 12;
+inline constexpr int moduleCount = 13;
 inline constexpr int presetsPerModule = 5;
-inline constexpr const char* moduleNames[moduleCount] { "Drift", "Patina", "Atrium", "Chime", "Helix", "Gleam", "Relay", "Forge", "Cinder", "Ember", "Vista", "Quartz" };
-inline constexpr const char* enabledIds[moduleCount] { "drift_enabled", "patina_enabled", "atrium_enabled", "chime_enabled", "helix_enabled", "gleam_enabled", "relay_enabled", "forge_enabled", "cinder_enabled", "ember_enabled", "vista_enabled", "quartz_enabled" };
-inline constexpr const char* programKeys[moduleCount] { "driftProgram", "patinaProgram", "atriumProgram", "chimeProgram", "helixProgram", "gleamProgram", "relayProgram", "forgeProgram", "cinderProgram", "emberProgram", "vistaProgram", "quartzProgram" };
+inline constexpr const char* moduleNames[moduleCount] { "Drift", "Patina", "Atrium", "Chime", "Helix", "Gleam", "Relay", "Forge", "Cinder", "Ember", "Vista", "Quartz", "Silk" };
+inline constexpr const char* enabledIds[moduleCount] { "drift_enabled", "patina_enabled", "atrium_enabled", "chime_enabled", "helix_enabled", "gleam_enabled", "relay_enabled", "forge_enabled", "cinder_enabled", "ember_enabled", "vista_enabled", "quartz_enabled", "silk_enabled" };
+inline constexpr const char* programKeys[moduleCount] { "driftProgram", "patinaProgram", "atriumProgram", "chimeProgram", "helixProgram", "gleamProgram", "relayProgram", "forgeProgram", "cinderProgram", "emberProgram", "vistaProgram", "quartzProgram", "silkProgram" };
 inline constexpr const char* presetNames[moduleCount][presetsPerModule] {
     { "Soft focus", "Slow tide", "Wide room", "Worn motor", "Pure vibrato" },
     { "Fresh spool", "Pocket cassette", "Submerged", "Sun-bleached", "Midnight dub" },
@@ -22,9 +22,10 @@ inline constexpr const char* presetNames[moduleCount][presetsPerModule] {
     { "Fine grain", "Copper dust", "Paper speaker", "Ash cloud", "Rough edge" },
     { "Warm foundation", "Wire bass", "Dense floor", "Folded metal", "Quiet ember" },
     { "Open window", "Centered bass", "Mono bloom", "Narrow room", "Air frame" },
-    { "Clear finish", "Warm facets", "Bright polish", "Dense cut", "Soft edges" }
+    { "Clear finish", "Warm facets", "Bright polish", "Dense cut", "Soft edges" },
+    { "Gentle weave", "Vocal ease", "Cymbal calm", "Low-mid hush", "Soft fabric" }
 };
-inline constexpr int factoryControlCount[moduleCount] { 9, 8, 8, 11, 8, 8, 8, 8, 8, 8, 8, 8 };
+inline constexpr int factoryControlCount[moduleCount] { 9, 8, 8, 11, 8, 8, 8, 8, 8, 8, 8, 8, 9 };
 inline constexpr const char* factoryIds[moduleCount][11] {
     { "depth", "rate", "wander", "tone", "follow", "noise", "width", "mix", "output" },
     { "patina_sample", "patina_drive", "patina_wear", "patina_flutter", "patina_hiss", "patina_chorus", "patina_tone", "patina_mix" },
@@ -37,7 +38,8 @@ inline constexpr const char* factoryIds[moduleCount][11] {
     { "cinder_grit", "cinder_noise", "cinder_tone", "cinder_texture", "cinder_drive", "cinder_decay", "cinder_width", "cinder_mix" },
     { "ember_drive", "ember_shape", "ember_color", "ember_filter", "ember_anchor", "ember_bias", "ember_trim", "ember_mix" },
     { "vista_low", "vista_mid", "vista_high", "vista_low_split", "vista_high_split", "vista_spread", "vista_delay", "vista_mix" },
-    { "quartz_input", "quartz_low", "quartz_mid", "quartz_high", "quartz_character", "quartz_ceiling", "quartz_release", "quartz_mix" }
+    { "quartz_input", "quartz_low", "quartz_mid", "quartz_high", "quartz_character", "quartz_ceiling", "quartz_release", "quartz_mix" },
+    { "silk_depth", "silk_selectivity", "silk_low", "silk_high", "silk_attack", "silk_release", "silk_trim", "silk_mix", "silk_listen" }
 };
 inline constexpr float factoryValues[moduleCount][presetsPerModule][11] {
     {
@@ -106,6 +108,12 @@ inline constexpr float factoryValues[moduleCount][presetsPerModule][11] {
         {1,-1,.5f,2,.1f,-1,90,1},
         {6,1,1,.5f,.15f,-3,220,1},
         {0,0,-1,-1.5f,.45f,-2,250,.75f}
+    }, {
+        {6,.35f,900,11000,15,180,0,1,0},
+        {10,.25f,1200,10000,6,150,0,1,0},
+        {12,.15f,2000,16000,2,100,0,1,0},
+        {9,.25f,80,3000,20,240,0,1,0},
+        {14,.1f,500,14000,12,280,0,.7f,0}
     }
 };
 }

@@ -45,6 +45,7 @@ private:
     void drawBass(juce::Graphics&);
     void drawStereo(juce::Graphics&);
     void drawMastering(juce::Graphics&);
+    void drawSuppression(juce::Graphics&);
     BatchlyProcessor& processor;
     DeckLookAndFeel look;
     std::array<juce::Slider, 9> knobs;
@@ -52,12 +53,13 @@ private:
     std::array<std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment>, 9> attachments;
     juce::TextButton bypass { "BYPASS" }, open { "Open audio" }, play { "Play" }, stop { "Stop" },
         demo { "Demo" }, exportButton { "Export WAV" }, savePreset { "Save" }, loadPreset { "Load" }, updates { "Updates" },
-        moduleEnabled;
+        moduleEnabled, silkListen { "AUDITION CUTS" };
     juce::Component collectionContent;
     juce::Viewport collectionViewport;
     std::array<juce::TextButton, batchly::moduleCount> collectionTabs;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> bypassAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> moduleAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> silkListenAttachment;
     juce::ComboBox presets;
     std::array<juce::ComboBox, 3> tuning;
     std::array<std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment>, 3> tuningAttachments;

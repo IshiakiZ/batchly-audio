@@ -104,6 +104,14 @@ The five presets, outward-arrow icon and three-region width drawing are original
 
 Quartz is a broad mix-finishing processor rather than a physical circuit model. It adds adjustable limiter release instead of reproducing 24K's internal behavior. There is no lookahead or true-peak guarantee. Dry blend, enable transitions and shared Output can exceed the wet ceiling. See `QUARTZ-VERIFICATION.md` for evidence and limits.
 
+## Silk
+
+The [official Velvet page](https://cymatics.fm/products/velvet), consulted September 26, 2026, establishes the role of dynamic resonance suppression. The installed plugin's public host parameters expose depth, selectivity, timing, frequency sensitivity and difference audition. No commercial source, binary internals, presets, artwork or audio were incorporated.
+
+`src/SilkEngine.h` is an independently written 32-band processor. Fixed logarithmic constant-peak bandpasses use the public mathematical equations documented in the [W3C Audio EQ Cookbook](https://www.w3.org/TR/audio-eq-cookbook/). No external implementation was copied. Detector powers are normalized by noise bandwidth before comparison with four neighboring bands. A shared stereo detector requests cuts only for prominent regions within smoothed working boundaries. Cut depths have adjustable attack/release and linear interpolation between control updates. Cascaded partial bandpass subtraction creates the notches; subtracting the resulting signal from the input provides difference audition.
+
+The engine uses fixed arrays and no audio-thread allocation. It adds no playback delay and retains exact dry/off paths. The five starting points, woven ribbon icon and measured cut display are original. Fixed detector spacing gives frequency-dependent selectivity; Silk does not reproduce Velvet's internal algorithm, variable sensitivity curve, external sidechain or stereo modes. See `SILK-VERIFICATION.md` for the actual checks and limits.
+
 ## Framework
 
 JUCE 9.0.2 is pinned to commit `72782788ce18c2d4d760b28e0921d6ffc6431102`. It supplies the GUI, audio-device management, file reading/writing, parameter management, and VST3/standalone wrappers. It does not implement Drift's effect algorithm.
