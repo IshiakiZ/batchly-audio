@@ -1,6 +1,6 @@
 # Batchly Audio
 
-An original open-source audio collection for Windows and VST3 hosts. Version 0.3 adds **Atrium**, a spacious stereo reverb, alongside **Drift**, a chorus/vibrato effect, and **Patina**, a tape/lo-fi processor. Each effect has its own controls, illustration and sidebar icon.
+An original open-source audio collection for Windows and VST3 hosts. Version 0.4 adds **Chime**, a tuned harmonic resonator, alongside **Drift** chorus/vibrato, **Patina** tape coloration and **Atrium** reverb. Each effect has its own controls, illustration and sidebar icon.
 
 Drift combines smooth randomized delay modulation, periodic modulation, stereo spread, an envelope-controlled low-pass filter and optional generated hiss. Its sound engine, layout, presets, graphics and demo audio were written for this project. It does not load or require a Cymatics plugin.
 
@@ -10,15 +10,15 @@ Open `Batchly Audio.exe` in the Windows package, then click **Demo**. Choose **S
 
 The desktop app can open or accept a dropped mono/stereo WAV, AIFF, FLAC, MP3 or Ogg file. Click **Play**, adjust the effects, and use **Export WAV** to create a stereo 24-bit WAV at the source sample rate. Export includes the effect tail and refuses to save clipped output. The desktop app plays files and its demo; it does not monitor the microphone. Use your DAW for live recording through the VST3.
 
-## Patina and the rack
+## The rack and Patina
 
-Select an effect in the sidebar, then click its **ON/OFF** button to enable or disable it. The sidebar always shows all three effects' states. Selecting a page only changes the controls you see; it does not change the audio routing. Audio flows through **Drift, then Patina, then Atrium**, followed by shared Output. **BYPASS** bypasses the whole rack. New instances start with Drift on, Patina and Atrium off.
+Select an effect in the sidebar, then click its **ON/OFF** button to enable or disable it. Each sidebar button shows its effect's on/off state; the collection scrolls when needed. Selecting a page only changes the controls you see; it does not change the audio routing. Audio flows through **Drift, Patina, Atrium, then Chime**, followed by shared Output. **BYPASS** bypasses the whole rack. New instances start with Drift on, the other effects off.
 
 Patina's **Sample rate** softens high frequencies through a filtered rate reducer. **Drive** adds original soft saturation; **Wear** and **Flutter** add slow and fast pitch variation. **Hiss** generates noise, **Chorus** adds a stereo voice, **Tone** rolls off the top end, and **Mix** blends the effect. Hiss defaults to zero. Rates above the host's rate use the host rate; the tape display shows the effective rate. Its filters have finite slopes and are not brick-wall filters.
 
-Try **Fresh spool**, **Pocket cassette**, **Submerged**, **Sun-bleached**, and **Midnight dub**. The on-screen preset menu affects the displayed effect and enables it. DAW program selection recalls a single-effect starting point. Saved `.bapreset` files contain the entire rack. The wet tape path has an intentional variable delay of approximately 9-25 ms; partially wet settings can add comb coloration. The rack still reports zero latency because its dry path is immediate. With Atrium off, exports include a 160 ms tail when Patina is enabled.
+Try **Fresh spool**, **Pocket cassette**, **Submerged**, **Sun-bleached**, and **Midnight dub**. The on-screen preset menu affects the displayed effect and enables it. DAW program selection recalls a single-effect starting point. Saved `.bapreset` files contain the entire rack. The wet tape path has an intentional variable delay of approximately 9-25 ms; partially wet settings can add comb coloration. The rack still reports zero latency because its dry path is immediate. With Atrium and Chime off, exports include a 160 ms tail when Patina is enabled.
 
-Existing 0.1 Drift projects and presets load with Drift enabled and Patina disabled. Version 0.1 and 0.2 states both load with Atrium off. Original parameter IDs, order, plugin identity and the first ten host program names remain unchanged.
+Existing 0.1 Drift projects and presets load with Drift enabled and Patina disabled. Version 0.1 and 0.2 states both load with Atrium off. Original parameter IDs, order, plugin identity and the first fifteen host program names remain unchanged.
 
 ## Atrium
 
@@ -28,9 +28,19 @@ Select **Atrium**, then turn **ATRIUM OFF** on. Try **Open atrium**, **Close wal
 
 The room illustration responds to Size and the measured wet level; it is not a measured acoustic response. Size and pre-delay changes can bend the tail's pitch. Atrium is one original room algorithm with five starting points, not a physical room model or a set of sampled impulse responses.
 
-With Atrium enabled, exports reserve twice Decay, plus Pre-delay and 0.8 seconds, for the tail. The VST3 reports the same allowance to its host. A DAW can still apply its own render-tail setting. With Atrium off, exports retain the earlier 80 ms allowance, or 160 ms when Patina is on. Processing adds no delay to the dry path.
+With Atrium enabled, exports reserve twice Decay, plus Pre-delay and 0.8 seconds, for the tail. The VST3 reports the same allowance to its host. A DAW can still apply its own render-tail setting. With Atrium and Chime off, exports retain the earlier 80 ms allowance, or 160 ms when Patina is on. Processing adds no delay to the dry path.
 
 **Save** and **Load** store `.bapreset` files. A DAW also saves the plugin's controls in its project. The starting-point menu selects factory settings; controls can then be edited freely.
+
+## Chime
+
+Select **Chime**, then choose **Glass strings**, **Minor bells**, **Copper choir**, **Small music box**, or **Suspended air**. Choose a root note, scale and base octave below the strings. Incoming sound excites a bank of tuned resonators; Chime does not change the pitch of the dry signal or generate notes from silence. It works especially well with percussion, plucks and textured sounds.
+
+**Ring** sets the nominal decay from 0.08 to 6 seconds. **Color** softens the ringing layer, while **Drive** adds harmonics before it. **Spread** introduces a second octave. **Detune** separates the stereo tunings slightly; **Motion** adds slow pitch movement. **Width** centers the wet layer at zero and **Mix** blends it with the input. The string display responds to measured resonator levels. Major, minor, Dorian, major/minor pentatonic and whole-tone scales are available, with base octaves 2 through 4.
+
+Key changes smoothly retune ringing notes, so moving them during a tail can create a pitch glide. The engine is a modal resonator, not a pitch-correction or MIDI instrument. It does not include an arpeggiator or Gamma's full control set. The five presets, tuning design, graphics and processing code are original.
+
+When Chime is enabled, export and host tail allowances add twice Ring plus 0.25 seconds to the upstream rack's allowance, because a reverb tail can continue exciting the strings. All 0.1, 0.2 and 0.3 projects load with Chime off. The earlier parameter IDs, order, program numbers and plugin identity remain unchanged.
 
 ## FL Studio and other VST3 hosts
 

@@ -18,6 +18,9 @@ add_test(NAME patina_dsp COMMAND patina_tests)
 add_executable(atrium_tests tests/AtriumTests.cpp)
 target_include_directories(atrium_tests PRIVATE src)
 add_test(NAME atrium_dsp COMMAND atrium_tests)
+add_executable(chime_tests tests/ChimeTests.cpp)
+target_include_directories(chime_tests PRIVATE src)
+add_test(NAME chime_dsp COMMAND chime_tests)
 
 if(BATCHLY_BUILD_APP)
     # Pin the framework so a fresh checkout builds against the same audio wrapper.
@@ -37,7 +40,7 @@ if(BATCHLY_BUILD_APP)
         PLUGIN_CODE Badr
         FORMATS VST3 Standalone
         PRODUCT_NAME "Batchly Audio"
-        DESCRIPTION "Drift, Patina and Atrium - original modulation, tape color and reverb"
+        DESCRIPTION "Original modulation, tape color, reverb and tuned resonance"
         IS_SYNTH FALSE
         NEEDS_MIDI_INPUT FALSE
         NEEDS_MIDI_OUTPUT FALSE

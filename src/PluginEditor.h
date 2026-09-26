@@ -36,6 +36,7 @@ private:
     void configureKnobs();
     void drawTapeDeck(juce::Graphics&);
     void drawReverbRoom(juce::Graphics&);
+    void drawResonator(juce::Graphics&);
     BatchlyProcessor& processor;
     DeckLookAndFeel look;
     std::array<juce::Slider, 9> knobs;
@@ -43,10 +44,15 @@ private:
     std::array<std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment>, 9> attachments;
     juce::TextButton bypass { "BYPASS" }, open { "Open audio" }, play { "Play" }, stop { "Stop" },
         demo { "Demo" }, exportButton { "Export WAV" }, savePreset { "Save" }, loadPreset { "Load" }, updates { "Updates" },
-        driftTab { "Drift" }, patinaTab { "Patina" }, atriumTab { "Atrium" }, moduleEnabled;
+        moduleEnabled;
+    juce::Component collectionContent;
+    juce::Viewport collectionViewport;
+    std::array<juce::TextButton, batchly::moduleCount> collectionTabs;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> bypassAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> moduleAttachment;
     juce::ComboBox presets;
+    std::array<juce::ComboBox, 3> tuning;
+    std::array<std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment>, 3> tuningAttachments;
     juce::Label status;
     juce::TooltipWindow tooltips { this, 700 };
     std::unique_ptr<juce::FileChooser> chooser;
@@ -58,5 +64,6 @@ private:
     int shownModule = -1;
     float reelAngle = 0;
     float reverbMeter = 0;
+    std::array<float, 7> resonatorMeters {};
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(BatchlyEditor)
 };

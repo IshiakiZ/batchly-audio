@@ -2,6 +2,7 @@
 #pragma once
 #include <juce_audio_utils/juce_audio_utils.h>
 #include "RackEngine.h"
+#include "ModuleCatalog.h"
 
 class BatchlyProcessor final : public juce::AudioProcessor {
 public:
@@ -19,14 +20,14 @@ public:
     bool producesMidi() const override { return false; }
     bool isMidiEffect() const override { return false; }
     double getTailLengthSeconds() const override;
-    int getNumPrograms() override { return 15; }
+    int getNumPrograms() override { return batchly::moduleCount * batchly::presetsPerModule; }
     int getCurrentProgram() override { return currentProgram.load(); }
     void setCurrentProgram(int index) override;
     bool isCurrentProgramModified() const;
     int getDisplayedProgram() const;
     void setModuleProgram(int module, int index);
     int selectedModule() const { return editorModule.load(); }
-    void selectModule(int module) { editorModule.store(juce::jlimit(0, 2, module)); }
+    void selectModule(int module) { editorModule.store(juce::jlimit(0, batchly::moduleCount - 1, module)); }
     const juce::String getProgramName(int index) override;
     void changeProgramName(int, const juce::String&) override {}
     void getStateInformation(juce::MemoryBlock&) override;
@@ -49,18 +50,22 @@ public:
     std::atomic<float> peak { 0 }, motionLeft { 0 }, motionRight { 0 };
     std::atomic<float> tapeMovement { 0 };
     std::atomic<float> reverbLevel { 0 };
+    std::array<std::atomic<float>, 7> resonatorLevels {};
 
 private:
     static juce::AudioProcessorValueTreeState::ParameterLayout makeLayout();
     std::array<std::atomic<float>*, 10> parameterValues {};
     std::array<std::atomic<float>*, 8> tapeValues {};
     std::array<std::atomic<float>*, 8> reverbValues {};
+    std::array<std::atomic<float>*, 11> chimeValues {};
     std::atomic<float>* driftEnabled = nullptr;
     std::atomic<float>* patinaEnabled = nullptr;
     std::atomic<float>* atriumEnabled = nullptr;
+    std::atomic<float>* chimeEnabled = nullptr;
     batchly::RackEngine engine;
     std::atomic<int> currentProgram { 0 };
-    std::atomic<int> driftProgram { 0 }, patinaProgram { 0 }, atriumProgram { 0 }, editorModule { 0 };
+    std::array<std::atomic<int>, batchly::moduleCount> modulePrograms {};
+    std::atomic<int> editorModule { 0 };
     juce::AudioFormatManager formats;
     juce::TimeSliceThread readThread { "Audio file read-ahead" };
     std::unique_ptr<juce::AudioFormatReaderSource> readerSource;

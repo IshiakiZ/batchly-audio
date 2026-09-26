@@ -1,3 +1,5 @@
+Current addition: see [Chime 0.4 verification](CHIME-VERIFICATION.md). Earlier records below describe their tested versions.
+
 # Drift 0.1 verification record
 
 For the current three-effect release, see [Atrium 0.3 verification](ATRIUM-VERIFICATION.md), and [Patina 0.2 verification](PATINA-VERIFICATION.md) for the previous release. The notes below preserve the original Drift checks.
