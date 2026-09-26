@@ -27,7 +27,8 @@ $request = @{ version = '0.1.0-preview.2'; files = $hashes; hostProcessId = 0; h
 $powershell = Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
 $helper = Join-Path $PSScriptRoot 'apply-update.ps1'
 function Start-Helper {
-    Start-Process -FilePath $powershell -WindowStyle Hidden -ArgumentList @('-NoProfile', '-File', ('"' + $helper + '"'), '-RequestFile', ('"' + $requestPath + '"')) -PassThru
+    $script:helperErrors = Join-Path $testFolder ('helper-' + [Guid]::NewGuid().ToString('N') + '.log')
+    Start-Process -FilePath $powershell -WindowStyle Hidden -RedirectStandardError $script:helperErrors -ArgumentList @('-NoProfile', '-File', ('"' + $helper + '"'), '-RequestFile', ('"' + $requestPath + '"')) -PassThru
 }
 
 $expected = $hashes['Batchly Audio.exe']
@@ -46,8 +47,23 @@ try {
     $request.hostProcessId = $hostFixture.Id
     $request.hostExecutable = $powershell
     $request | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $requestPath
-    $valid = Start-Helper
     $statusPath = Join-Path $env:LOCALAPPDATA 'BatchlyAudio\update-status.json'
+    # Reproduce a status reader holding the file while the helper publishes its
+    # waiting state. Status updates must survive this without partial JSON.
+    $statusReader = [IO.File]::Open($statusPath, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::Read)
+    try {
+        $valid = Start-Helper
+        $readyPath = Join-Path $testFolder 'ready.signal'
+        for ($readyAttempt = 0; $readyAttempt -lt 100 -and -not (Test-Path -LiteralPath $readyPath); $readyAttempt++) {
+            Start-Sleep -Milliseconds 100
+        }
+        if (-not (Test-Path -LiteralPath $readyPath)) { throw 'Update helper did not validate its package.' }
+        Start-Sleep -Milliseconds 350
+        if ($valid.HasExited) { throw ('Status reader aborted the update. ' + (Get-Content -LiteralPath $script:helperErrors -Raw)) }
+        $statusBytes = New-Object byte[] ([int]$statusReader.Length)
+        [void]$statusReader.Read($statusBytes, 0, $statusBytes.Length)
+        $null = [Text.Encoding]::UTF8.GetString($statusBytes) | ConvertFrom-Json
+    } finally { $statusReader.Dispose() }
     $waiting = $false
     for ($attempt = 0; $attempt -lt 100; $attempt++) {
         if ((Test-Path -LiteralPath $statusPath) -and (Get-Content -LiteralPath $statusPath -Raw | ConvertFrom-Json).state -eq 'waiting') { $waiting = $true; break }
@@ -58,7 +74,22 @@ try {
     if (-not $valid.WaitForExit(20000) -or $valid.ExitCode -ne 0) { throw 'The verified portable update failed.' }
     if ((Get-FileHash -LiteralPath $appTarget).Hash -ne $expected) { throw 'The installed update differs from its verified source.' }
     if ((Get-Content -LiteralPath $statusPath -Raw | ConvertFrom-Json).state -ne 'complete') { throw 'Success was not recorded.' }
-    Write-Output 'PASS: damaged update rejected; host exit respected; portable app updated and hash verified.'
+    'Rollback fixture' | Set-Content -LiteralPath $appTarget
+    $rollbackHash = (Get-FileHash -LiteralPath $appTarget).Hash
+    # Test the replacement primitive directly with the exact helper runtime;
+    # PowerShell 5 marshals plain $null to an empty filename for File.Replace.
+    $rollbackScript = Join-Path $testFolder 'rollback-fixture.ps1'
+    @'
+param([string]$Target)
+$previous = $Target + '.rollback-previous'
+$replacement = $Target + '.rollback-new'
+[IO.File]::WriteAllText($replacement, 'replacement')
+[IO.File]::Replace($replacement, $Target, $previous)
+[IO.File]::Replace($previous, $Target, [NullString]::Value)
+'@ | Set-Content -LiteralPath $rollbackScript
+    $rollback = Start-Process -FilePath $powershell -WindowStyle Hidden -ArgumentList @('-NoProfile', '-File', ('"' + $rollbackScript + '"'), '-Target', ('"' + $appTarget + '"')) -PassThru
+    if (-not $rollback.WaitForExit(20000) -or $rollback.ExitCode -ne 0 -or (Get-FileHash -LiteralPath $appTarget).Hash -ne $rollbackHash) { throw 'Windows PowerShell rollback failed.' }
+    Write-Output 'PASS: damaged update rejected; concurrent status reader tolerated; host exit respected; portable app updated and hash verified; rollback replacement works.'
 } finally {
     if (-not (Test-Path -LiteralPath $gate)) { New-Item -ItemType File -Path $gate | Out-Null }
 }

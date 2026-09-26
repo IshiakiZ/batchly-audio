@@ -11,8 +11,26 @@ New-Item -ItemType Directory -Path $logFolder -Force | Out-Null
 $logFile = Join-Path $logFolder 'update-status.json'
 
 function Write-Status([string]$state, [string]$message) {
-    @{ state = $state; message = $message; time = [DateTime]::UtcNow.ToString('o') } |
-        ConvertTo-Json | Set-Content -LiteralPath $logFile -Encoding UTF8
+    $statusJson = @{ state = $state; message = $message; time = [DateTime]::UtcNow.ToString('o') } | ConvertTo-Json
+    $statusTemporary = Join-Path $logFolder ('status-' + [Guid]::NewGuid().ToString('N') + '.new')
+    try {
+        [IO.File]::WriteAllText($statusTemporary, $statusJson, [Text.UTF8Encoding]::new($false))
+        # Publish complete JSON atomically. A reader can briefly deny replacement
+        # on Windows, so retry the status write without aborting a valid update.
+        for ($statusAttempt = 0; $statusAttempt -lt 100; $statusAttempt++) {
+            try {
+                # Windows PowerShell needs NullString to pass a null backup path.
+                if ([IO.File]::Exists($logFile)) { [IO.File]::Replace($statusTemporary, $logFile, [NullString]::Value) }
+                else { [IO.File]::Move($statusTemporary, $logFile) }
+                return
+            } catch [IO.IOException] {
+                if ($statusAttempt -eq 99) { throw }
+                Start-Sleep -Milliseconds 50
+            }
+        }
+    } finally {
+        if ([IO.File]::Exists($statusTemporary)) { [IO.File]::Delete($statusTemporary) }
+    }
 }
 
 function Get-Sha256([string]$path) {
@@ -116,7 +134,7 @@ try {
     for ($i = $completed.Count - 1; $i -ge 0; $i--) {
         $file = $completed[$i]
         try {
-            if ($file.existed) { [IO.File]::Replace($file.backup, $file.target, $null) }
+            if ($file.existed) { [IO.File]::Replace($file.backup, $file.target, [NullString]::Value) }
             else { [IO.File]::Delete($file.target) }
         } catch { $failure += ' A backup could not be restored: ' + $file.backup }
     }
