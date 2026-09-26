@@ -54,6 +54,19 @@ int main(int argc, char** argv) {
                             slider->setValue(slider->getValueFromText("0.43 s"),juce::sendNotificationSync);
                             require(std::abs(processor.readRackParameters().cinder.decaySeconds-.43f)<.0001f,"Cinder Decay control is disconnected");
                         }
+                        if (module == 9 && slider->getName() == "DRIVE") {
+                            require(formatted.contains("dB"),"Ember drive has the wrong unit");
+                            slider->setValue(slider->getValueFromText("13.7 dB"),juce::sendNotificationSync);
+                            require(std::abs(processor.readRackParameters().ember.driveDb-13.7f)<.0001f,"Ember Drive control is disconnected");
+                        }
+                        if (module == 9 && slider->getName() == "COLOR") {
+                            slider->setValue(slider->getValueFromText("-43 %"),juce::sendNotificationSync);
+                            require(std::abs(processor.readRackParameters().ember.color+.43f)<.0001f,"Signed Ember Color control is disconnected");
+                        }
+                        if (module == 9 && slider->getName() == "TRIM") {
+                            slider->setValue(slider->getValueFromText("-7.2 dB"),juce::sendNotificationSync);
+                            require(std::abs(processor.readRackParameters().ember.trimDb+7.2f)<.0001f,"Ember Trim control is disconnected");
+                        }
                     }
                     if (auto* combo = dynamic_cast<juce::ComboBox*>(child))
                         if (combo->getNumItems() == batchly::presetsPerModule && combo->getName().isEmpty()) presetMenu = combo;

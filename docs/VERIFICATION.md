@@ -1,4 +1,4 @@
-Current addition: [Cinder 0.9 verification](CINDER-VERIFICATION.md). Previous addition: [Forge 0.8 verification](FORGE-VERIFICATION.md). Earlier records below describe their tested versions.
+Current addition: [Ember 0.10 verification](EMBER-VERIFICATION.md). Previous addition: [Cinder 0.9 verification](CINDER-VERIFICATION.md). Earlier records below describe their tested versions.
 
 # Drift 0.1 verification record
 

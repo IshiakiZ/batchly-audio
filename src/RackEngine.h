@@ -9,6 +9,7 @@
 #include "RelayEngine.h"
 #include "ForgeEngine.h"
 #include "CinderEngine.h"
+#include "EmberEngine.h"
 
 namespace batchly {
 struct RackParameters {
@@ -21,6 +22,7 @@ struct RackParameters {
     RelayParameters relay;
     ForgeParameters forge;
     CinderParameters cinder;
+    EmberParameters ember;
     bool driftEnabled = true;
 };
 
@@ -40,6 +42,7 @@ public:
         relay.prepare(sr, settings.relay);
         forge.prepare(sr, settings.forge);
         cinder.prepare(sr, settings.cinder);
+        ember.prepare(sr, settings.ember);
     }
     void process(float* const* audio, int channels, int samples, const RackParameters& settings) noexcept {
         if (!audio || channels < 1 || samples < 1) return;
@@ -63,6 +66,7 @@ public:
             relay.process(block.data(), channels, count, settings.relay);
             forge.process(block.data(), channels, count, settings.forge);
             cinder.process(block.data(), channels, count, settings.cinder);
+            ember.process(block.data(), channels, count, settings.ember);
             for (int i = 0; i < count; ++i) {
                 outputDb += smoothing * (safeGain(settings.drift.outputDb) - outputDb);
                 bypass += smoothing * ((settings.drift.bypass ? 1.f : 0.f) - bypass);
@@ -84,10 +88,11 @@ public:
     std::array<float, 2> relayLevels() const noexcept { return relay.levels(); }
     std::array<float, 2> forgeActivity() const noexcept { return forge.activity(); }
     std::array<float, 2> cinderLevels() const noexcept { return cinder.levels(); }
+    std::array<float, 2> emberLevels() const noexcept { return ember.levels(); }
     static double tailSeconds(const RackParameters& settings) noexcept {
         const double upstream = settings.atrium.enabled ? AtriumEngine::tailSeconds(settings.atrium)
             : settings.patina.enabled ? .16 : .08;
-        return upstream + (settings.chime.enabled ? ChimeEngine::tailSeconds(settings.chime) : 0) + (settings.helix.enabled ? 1.5 : 0) + (settings.gleam.enabled ? .08 : 0) + (settings.relay.enabled ? RelayEngine::tailSeconds(settings.relay) : 0) + (settings.forge.enabled ? .08 : 0) + (settings.cinder.enabled ? CinderEngine::tailSeconds(settings.cinder) : 0);
+        return upstream + (settings.chime.enabled ? ChimeEngine::tailSeconds(settings.chime) : 0) + (settings.helix.enabled ? 1.5 : 0) + (settings.gleam.enabled ? .08 : 0) + (settings.relay.enabled ? RelayEngine::tailSeconds(settings.relay) : 0) + (settings.forge.enabled ? .08 : 0) + (settings.cinder.enabled ? CinderEngine::tailSeconds(settings.cinder) : 0) + (settings.ember.enabled ? .6 : 0);
     }
 private:
     static float safeGain(float x) noexcept { return std::isfinite(x) ? std::clamp(x, -24.f, 12.f) : 0; }
@@ -101,6 +106,7 @@ private:
     RelayEngine relay;
     ForgeEngine forge;
     CinderEngine cinder;
+    EmberEngine ember;
     std::array<std::array<float, capacity>, 2> dry {};
     float outputDb = 0, bypass = 0, smoothing = 0;
 };
