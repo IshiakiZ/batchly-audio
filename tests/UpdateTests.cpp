@@ -32,7 +32,8 @@ int main(int argc, char** argv) {
         file.deleteFile();
         if (argc > 1 && (juce::String(argv[1]) == "--check-live" || juce::String(argv[1]) == "--stage-live")) {
             const bool stage = juce::String(argv[1]) == "--stage-live";
-            const auto result = batchly::UpdateService::check(release, stage ? "0.0.0" : batchly::UpdateService::currentVersion);
+            // Use an older preview so the live download test includes preview releases.
+            const auto result = batchly::UpdateService::check(release, stage ? "0.0.0-preview.1" : batchly::UpdateService::currentVersion);
             require(result.wasOk(), result.getErrorMessage().toRawUTF8());
             std::cout << (release.available() ? "Update available: " + release.version.toStdString() : "Live check: up to date") << '\n';
             if (stage) {
