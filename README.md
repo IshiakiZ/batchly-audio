@@ -16,7 +16,7 @@ Select an effect in the sidebar, then click its **ON/OFF** button to enable or d
 
 Patina's **Sample rate** softens high frequencies through a filtered rate reducer. **Drive** adds original soft saturation; **Wear** and **Flutter** add slow and fast pitch variation. **Hiss** generates noise, **Chorus** adds a stereo voice, **Tone** rolls off the top end, and **Mix** blends the effect. Hiss defaults to zero. Rates above the host's rate use the host rate; the tape display shows the effective rate. Its filters have finite slopes and are not brick-wall filters.
 
-Try **Fresh spool**, **Pocket cassette**, **Submerged**, **Sun-bleached**, and **Midnight dub**. The on-screen preset menu affects the displayed effect and enables it. DAW program selection recalls a single-effect starting point. Saved `.bapreset` files contain the entire rack. The wet tape path has an intentional variable delay of approximately 9-25 ms; partially wet settings can add comb coloration. The rack still reports zero latency because its dry path is immediate. Exports include a 160 ms tail when Patina is enabled.
+Try **Fresh spool**, **Pocket cassette**, **Submerged**, **Sun-bleached**, and **Midnight dub**. The on-screen preset menu affects the displayed effect and enables it. DAW program selection recalls a single-effect starting point. Saved `.bapreset` files contain the entire rack. The wet tape path has an intentional variable delay of approximately 9-25 ms; partially wet settings can add comb coloration. The rack still reports zero latency because its dry path is immediate. With Atrium off, exports include a 160 ms tail when Patina is enabled.
 
 Existing 0.1 Drift projects and presets load with Drift enabled and Patina disabled. Version 0.1 and 0.2 states both load with Atrium off. Original parameter IDs, order, plugin identity and the first ten host program names remain unchanged.
 
@@ -42,7 +42,7 @@ FL Studio requires a standard VST3 installation folder; adding a custom search p
 
 The VST3 has passed independent host tests and FL Studio's verified plugin scan as a 64-bit effect. See the verification record for the exact checks and limits.
 
-This preview supports mono-in/mono-out and stereo-in/stereo-out. It reports zero host latency: the dry branch is immediate, while the wet branch has an intentional modulated 8-20 ms delay. It does not claim sample-for-sample equivalence to any commercial product.
+This preview supports mono-in/mono-out and stereo-in/stereo-out. It reports zero host latency because each dry branch is immediate. Wet delays and reverb reflections are intentional parts of the effects. It does not claim sample-for-sample equivalence to any commercial product.
 
 ## Updates
 
