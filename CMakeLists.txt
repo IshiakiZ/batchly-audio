@@ -27,6 +27,9 @@ add_test(NAME helix_dsp COMMAND helix_tests)
 add_executable(gleam_tests tests/GleamTests.cpp)
 target_include_directories(gleam_tests PRIVATE src)
 add_test(NAME gleam_dsp COMMAND gleam_tests)
+add_executable(relay_tests tests/RelayTests.cpp)
+target_include_directories(relay_tests PRIVATE src)
+add_test(NAME relay_dsp COMMAND relay_tests)
 
 if(BATCHLY_BUILD_APP)
     # Pin the framework so a fresh checkout builds against the same audio wrapper.
@@ -46,7 +49,7 @@ if(BATCHLY_BUILD_APP)
         PLUGIN_CODE Badr
         FORMATS VST3 Standalone
         PRODUCT_NAME "Batchly Audio"
-        DESCRIPTION "Original modulation, tape color, reverb, resonance, phasing and brightness"
+        DESCRIPTION "Original modulation, tape color, reverb, resonance, phasing, brightness and echoes"
         IS_SYNTH FALSE
         NEEDS_MIDI_INPUT FALSE
         NEEDS_MIDI_OUTPUT FALSE
@@ -69,4 +72,10 @@ if(BATCHLY_BUILD_APP)
         "BATCHLY_RELEASE_VERSION=\"${BATCHLY_RELEASE_VERSION}\"")
     target_link_libraries(update_tests PRIVATE juce::juce_core juce::juce_cryptography BatchlyFonts)
     add_test(NAME update_validation COMMAND update_tests)
+    add_executable(editor_tests tests/EditorTests.cpp)
+    # Exercise the compiled plugin components using their existing JUCE settings.
+    target_include_directories(editor_tests PRIVATE src $<TARGET_PROPERTY:BatchlyAudio,INCLUDE_DIRECTORIES>)
+    target_compile_definitions(editor_tests PRIVATE $<TARGET_PROPERTY:BatchlyAudio,COMPILE_DEFINITIONS>)
+    target_link_libraries(editor_tests PRIVATE BatchlyAudio)
+    add_test(NAME editor_rendering COMMAND editor_tests editor-previews)
 endif()

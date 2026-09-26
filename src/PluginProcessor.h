@@ -52,6 +52,7 @@ public:
     std::atomic<float> reverbLevel { 0 };
     std::atomic<float> phaserLeft { 0 }, phaserRight { 0 };
     std::atomic<float> brightnessLevel { 0 }, brightnessReduction { 0 };
+    std::atomic<float> echoLeft { 0 }, echoRight { 0 };
     std::array<std::atomic<float>, 7> resonatorLevels {};
 
 private:
@@ -62,12 +63,14 @@ private:
     std::array<std::atomic<float>*, 11> chimeValues {};
     std::array<std::atomic<float>*, 8> helixValues {};
     std::array<std::atomic<float>*, 8> gleamValues {};
+    std::array<std::atomic<float>*, 8> relayValues {};
     std::atomic<float>* driftEnabled = nullptr;
     std::atomic<float>* patinaEnabled = nullptr;
     std::atomic<float>* atriumEnabled = nullptr;
     std::atomic<float>* chimeEnabled = nullptr;
     std::atomic<float>* helixEnabled = nullptr;
     std::atomic<float>* gleamEnabled = nullptr;
+    std::atomic<float>* relayEnabled = nullptr;
     batchly::RackEngine engine;
     std::atomic<int> currentProgram { 0 };
     std::array<std::atomic<int>, batchly::moduleCount> modulePrograms {};

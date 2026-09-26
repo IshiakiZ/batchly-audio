@@ -1,4 +1,4 @@
-Current addition: see [Gleam 0.6 verification](GLEAM-VERIFICATION.md). Earlier records below describe their tested versions.
+Latest addition: [Relay 0.7 verification](RELAY-VERIFICATION.md), with the fresh FL Studio visual recall limitation recorded. Previous addition: [Gleam 0.6 verification](GLEAM-VERIFICATION.md). Earlier records below describe their tested versions.
 
 # Drift 0.1 verification record
 

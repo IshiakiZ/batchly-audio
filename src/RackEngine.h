@@ -6,6 +6,7 @@
 #include "ChimeEngine.h"
 #include "HelixEngine.h"
 #include "GleamEngine.h"
+#include "RelayEngine.h"
 
 namespace batchly {
 struct RackParameters {
@@ -15,6 +16,7 @@ struct RackParameters {
     ChimeParameters chime;
     HelixParameters helix;
     GleamParameters gleam;
+    RelayParameters relay;
     bool driftEnabled = true;
 };
 
@@ -31,6 +33,7 @@ public:
         chime.prepare(sr, settings.chime);
         helix.prepare(sr, settings.helix);
         gleam.prepare(sr, settings.gleam);
+        relay.prepare(sr, settings.relay);
     }
     void process(float* const* audio, int channels, int samples, const RackParameters& settings) noexcept {
         if (!audio || channels < 1 || samples < 1) return;
@@ -51,6 +54,7 @@ public:
             chime.process(block.data(), channels, count, settings.chime);
             helix.process(block.data(), channels, count, settings.helix);
             gleam.process(block.data(), channels, count, settings.gleam);
+            relay.process(block.data(), channels, count, settings.relay);
             for (int i = 0; i < count; ++i) {
                 outputDb += smoothing * (safeGain(settings.drift.outputDb) - outputDb);
                 bypass += smoothing * ((settings.drift.bypass ? 1.f : 0.f) - bypass);
@@ -69,10 +73,11 @@ public:
     std::array<float, 2> helixSweep() const noexcept { return helix.sweep(); }
     float gleamHighLevel() const noexcept { return gleam.highLevel(); }
     float gleamReduction() const noexcept { return gleam.reduction(); }
+    std::array<float, 2> relayLevels() const noexcept { return relay.levels(); }
     static double tailSeconds(const RackParameters& settings) noexcept {
         const double upstream = settings.atrium.enabled ? AtriumEngine::tailSeconds(settings.atrium)
             : settings.patina.enabled ? .16 : .08;
-        return upstream + (settings.chime.enabled ? ChimeEngine::tailSeconds(settings.chime) : 0) + (settings.helix.enabled ? 1.5 : 0) + (settings.gleam.enabled ? .08 : 0);
+        return upstream + (settings.chime.enabled ? ChimeEngine::tailSeconds(settings.chime) : 0) + (settings.helix.enabled ? 1.5 : 0) + (settings.gleam.enabled ? .08 : 0) + (settings.relay.enabled ? RelayEngine::tailSeconds(settings.relay) : 0);
     }
 private:
     static float safeGain(float x) noexcept { return std::isfinite(x) ? std::clamp(x, -24.f, 12.f) : 0; }
@@ -83,6 +88,7 @@ private:
     ChimeEngine chime;
     HelixEngine helix;
     GleamEngine gleam;
+    RelayEngine relay;
     std::array<std::array<float, capacity>, 2> dry {};
     float outputDb = 0, bypass = 0, smoothing = 0;
 };

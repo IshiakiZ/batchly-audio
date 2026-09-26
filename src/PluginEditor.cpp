@@ -61,6 +61,19 @@ const std::array<const char*, 9> gleamHints {
     "Blend the original with the enhanced and trimmed signal.",
     "Final gain after all effects. Keep the output meter below 0 dB."
 };
+const std::array<const char*, 9> relayIds { "relay_time", "relay_feedback", "relay_tone", "relay_motion", "relay_rate", "relay_bounce", "relay_glide", "relay_mix", "output" };
+const std::array<const char*, 9> relayTitles { "TIME", "FEEDBACK", "TONE", "MOTION", "RATE", "BOUNCE", "GLIDE", "MIX", "OUTPUT" };
+const std::array<const char*, 9> relayHints {
+    "Echo spacing in milliseconds. Changing Time bends pitch; Glide controls how gradually it moves.",
+    "Amount of each echo sent back into the delay. Higher values create longer repeat trails.",
+    "Soften the echoes on each pass. Bass is gently filtered from the feedback path.",
+    "Depth of delay-time movement. Higher settings make pitch movement more obvious.",
+    "Speed of the delay movement in cycles per second. Time and Rate are free-running without tempo sync.",
+    "Send echoes between speakers. Full bounce centers the input into the first left echo, then alternates sides. Mono stays mono.",
+    "How slowly delay time follows a new setting. Longer glides stretch the pitch transition.",
+    "Blend dry sound and echoes. Fully wet is useful on a send/return track.",
+    "Final gain after all effects. Keep the output meter below 0 dB."
+};
 const std::array<const char*, 9> reverbIds { "atrium_decay", "atrium_size", "atrium_predelay", "atrium_damping",
     "atrium_lowcut", "atrium_motion", "atrium_width", "atrium_mix", "output" };
 const std::array<const char*, 9> reverbTitles { "DECAY", "SIZE", "PRE-DELAY", "DAMPING", "LOW CUT", "MOTION", "WIDTH", "MIX", "OUTPUT" };
@@ -243,6 +256,12 @@ void DeckLookAndFeel::drawButtonText(juce::Graphics& g, juce::TextButton& button
         g.setColour(accent); g.drawLine(37, y - 8, 45, y - 14, 1.8f); g.drawLine(39, y, 48, y, 1.8f);
         g.drawLine(37, y + 8, 45, y + 14, 1.8f);
     }
+    if (button.getButtonText() == "Relay") {
+        for (int echo = 0; echo < 3; ++echo) {
+            g.setColour(echo == 1 ? accent : colour);
+            g.drawRect(13.f + echo * 10, y - 12 + echo * 5, 10.f, 17.f, 1.8f);
+        }
+    }
     g.setColour(colour); g.setFont(brandFont(18, true));
     g.drawText(button.getButtonText(), 53, 10, button.getWidth() - 58, 27, juce::Justification::centredLeft);
     const bool enabled = static_cast<bool>(button.getProperties()["effectEnabled"]);
@@ -330,7 +349,11 @@ void BatchlyEditor::showModule(int module) {
     moduleAttachment.reset();
     moduleAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(processor.parameters,
         enabledIds[shownModule], moduleEnabled);
-    for (int i = 0; i < batchly::moduleCount; ++i) collectionTabs[i].setToggleState(shownModule == i, juce::dontSendNotification);
+    for (int i = 0; i < batchly::moduleCount; ++i) {
+        collectionTabs[i].setToggleState(shownModule == i, juce::dontSendNotification);
+        // Set the first frame correctly before the periodic meter refresh runs.
+        collectionTabs[i].getProperties().set("effectEnabled", processor.parameters.getRawParameterValue(enabledIds[i])->load() >= .5f);
+    }
     const auto selectedBounds = collectionTabs[shownModule].getBounds();
     const int viewY = collectionViewport.getViewPositionY();
     if (selectedBounds.getY() < viewY) collectionViewport.setViewPosition(0, selectedBounds.getY());
@@ -346,25 +369,26 @@ void BatchlyEditor::configureKnobs() {
     const bool chime = shownModule == 3;
     const bool helix = shownModule == 4;
     const bool gleam = shownModule == 5;
-    const std::array<const char*, 9>* controlIds[] { &ids, &tapeIds, &reverbIds, &chimeIds, &helixIds, &gleamIds };
-    const std::array<const char*, 9>* controlTitles[] { &titles, &tapeTitles, &reverbTitles, &chimeTitles, &helixTitles, &gleamTitles };
-    const std::array<const char*, 9>* controlHints[] { &hints, &tapeHints, &reverbHints, &chimeHints, &helixHints, &gleamHints };
+    const bool relay = shownModule == 6;
+    const std::array<const char*, 9>* controlIds[] { &ids, &tapeIds, &reverbIds, &chimeIds, &helixIds, &gleamIds, &relayIds };
+    const std::array<const char*, 9>* controlTitles[] { &titles, &tapeTitles, &reverbTitles, &chimeTitles, &helixTitles, &gleamTitles, &relayTitles };
+    const std::array<const char*, 9>* controlHints[] { &hints, &tapeHints, &reverbHints, &chimeHints, &helixHints, &gleamHints, &relayHints };
     for (size_t i = 0; i < knobs.size(); ++i) {
         attachments[i].reset();
         auto& knob = knobs[i];
         const auto id = (*controlIds[shownModule])[i];
         attachments[i] = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(processor.parameters, id, knob);
-        const bool frequency = gleam ? i == 2 : helix ? (i == 0 || i == 3 || i == 4) : chime ? i == 1 : reverb ? (i == 3 || i == 4) : tape ? (i == 0 || i == 6) : (i == 1 || i == 3);
-        knob.textFromValueFunction = [i, frequency, reverb, chime, gleam](double value) {
+        const bool frequency = relay ? (i == 2 || i == 4) : gleam ? i == 2 : helix ? (i == 0 || i == 3 || i == 4) : chime ? i == 1 : reverb ? (i == 3 || i == 4) : tape ? (i == 0 || i == 6) : (i == 1 || i == 3);
+        knob.textFromValueFunction = [i, frequency, reverb, chime, gleam, relay](double value) {
             if ((reverb || chime) && i == 0) return juce::String(value, 2) + " s";
-            if (reverb && i == 2) return juce::String(value, 1) + " ms";
+            if ((reverb && i == 2) || (relay && i == 0)) return juce::String(value, 1) + " ms";
             if (frequency) return value >= 1000 ? juce::String(value / 1000, 2) + " kHz" : juce::String(value, 2) + " Hz";
             if (i == 8 || (gleam && (i == 0 || i == 1 || i == 6))) return juce::String(value, 1) + " dB";
             return juce::String(value * 100, 0) + " %";
         };
-        knob.valueFromTextFunction = [i, frequency, reverb, chime, gleam](const juce::String& value) {
+        knob.valueFromTextFunction = [i, frequency, reverb, chime, gleam, relay](const juce::String& value) {
             const auto number = value.getDoubleValue();
-            if ((reverb && (i == 0 || i == 2)) || (chime && i == 0)) return number;
+            if ((reverb && (i == 0 || i == 2)) || (chime && i == 0) || (relay && i == 0)) return number;
             if (frequency) return number * (value.containsIgnoreCase("k") ? 1000 : 1);
             return i == 8 || (gleam && (i == 0 || i == 1 || i == 6)) ? number : number / 100;
         };
@@ -427,9 +451,9 @@ void BatchlyEditor::paint(juce::Graphics& g) {
     }
     text(g, juce::String(moduleNames[shownModule]).toUpperCase(), { 211, 91, 185, 61 }, shownModule == 0 ? 48.f : 42.f, ink, true);
     g.setColour(accent); g.fillRect(396, 106, 3, 33);
-    const std::array<const char*, 6> subtitles { "RANDOM-MOTION CHORUS & VIBRATO", "TAPE COLOR & PITCH WEAR", "SPACIOUS ROOMS & MOVING TAILS", "TUNED STRINGS & HARMONIC COLOR", "STEREO SWEEPS & PHASE ROTATION", "PRESENCE, AIR & SOFT BRILLIANCE" };
-    const std::array<const char*, 6> descriptions { "Slow movement. Soft edges. A little room to wander.",
-        "Soft edges. Warm reels. A little history in every note.", "Close walls. Open halls. Give each note a place to linger.", "Strike a note. Find its colors. Let the strings answer.", "Slow circles. Deep notches. Keep the sound in motion.", "Open the top. Keep the body. Let the detail shine." };
+    const std::array<const char*, 7> subtitles { "RANDOM-MOTION CHORUS & VIBRATO", "TAPE COLOR & PITCH WEAR", "SPACIOUS ROOMS & MOVING TAILS", "TUNED STRINGS & HARMONIC COLOR", "STEREO SWEEPS & PHASE ROTATION", "PRESENCE, AIR & SOFT BRILLIANCE", "MOVING ECHOES & STEREO RETURNS" };
+    const std::array<const char*, 7> descriptions { "Slow movement. Soft edges. A little room to wander.",
+        "Soft edges. Warm reels. A little history in every note.", "Close walls. Open halls. Give each note a place to linger.", "Strike a note. Find its colors. Let the strings answer.", "Slow circles. Deep notches. Keep the sound in motion.", "Open the top. Keep the body. Let the detail shine.", "Send it out. Let it wander. Hear it come back." };
     text(g, subtitles[shownModule], { 420, 107, 473, 20 }, 13, ink, true);
     text(g, descriptions[shownModule], { 420, 129, 496, 18 }, 12, muted);
     screw(g, 203, 101); screw(g, 969, 101); screw(g, 203, 144); screw(g, 969, 144);
@@ -439,6 +463,7 @@ void BatchlyEditor::paint(juce::Graphics& g) {
     else if (shownModule == 3) drawResonator(g);
     else if (shownModule == 4) drawPhaser(g);
     else if (shownModule == 5) drawEnhancer(g);
+    else if (shownModule == 6) drawDelay(g);
     else {
     g.setColour(ink); g.fillRect(scope);
     g.setColour(rule); g.drawRect(scope, 1);
@@ -459,8 +484,8 @@ void BatchlyEditor::paint(juce::Graphics& g) {
     };
     drawHistory(rightHistory, background); drawHistory(leftHistory, accent); g.restoreState();
     }
-    text(g, shownModule == 5 ? "BRIGHTNESS" : shownModule == 4 ? "RESONANCE" : shownModule == 3 ? "EXCITATION" : shownModule == 2 ? "ARRIVAL" : "MOVEMENT", { 202, 380, 125, 18 }, 10, accentText, true);
-    text(g, shownModule == 5 ? "COLOR / CONTROL" : shownModule == 4 ? "FILTER / DRIVE" : shownModule == 3 ? "TUNING / MOTION" : shownModule == 2 ? "TONE / MOTION" : "CHARACTER", { 337, 380, 370, 18 }, 10, accentText, true);
+    text(g, shownModule == 6 ? "ECHO COLOR" : shownModule == 5 ? "BRIGHTNESS" : shownModule == 4 ? "RESONANCE" : shownModule == 3 ? "EXCITATION" : shownModule == 2 ? "ARRIVAL" : "MOVEMENT", { 202, 380, 125, 18 }, 10, accentText, true);
+    text(g, shownModule == 6 ? "PITCH / MOVEMENT" : shownModule == 5 ? "COLOR / CONTROL" : shownModule == 4 ? "FILTER / DRIVE" : shownModule == 3 ? "TUNING / MOTION" : shownModule == 2 ? "TONE / MOTION" : "CHARACTER", { 337, 380, 370, 18 }, 10, accentText, true);
     text(g, "IMAGE / BLEND", { 719, 380, 254, 18 }, 10, accentText, true);
     g.setColour(rule); g.drawHorizontalLine(552, 195, 977);
     g.setColour(panel); g.fillRect(636, 568, 142, 12);
@@ -593,6 +618,28 @@ void BatchlyEditor::drawEnhancer(juce::Graphics& g) {
     }
     text(g, settings.enabled ? "ENHANCER / ENGAGED" : "ENHANCER / OFF", { 211, 337, 210, 19 }, 10, background);
     text(g, "HIGH LEVEL", { 476, 337, 108, 19 }, 10, background);
+}
+void BatchlyEditor::drawDelay(juce::Graphics& g) {
+    const auto settings = processor.readRackParameters().relay;
+    g.setColour(ink); g.fillRect(196, 184, 398, 182);
+    g.setColour(rule); g.drawRect(196, 184, 398, 182);
+    text(g, "SIGNAL / RETURNS", { 211, 193, 220, 20 }, 10, background);
+    text(g, juce::String(settings.timeMs, 0) + " ms", { 488, 193, 95, 20 }, 10, background);
+    const float left = juce::jlimit(0.f, 1.f, processor.echoLeft.load() * 8);
+    const float right = juce::jlimit(0.f, 1.f, processor.echoRight.load() * 8);
+    g.setColour(rule.withAlpha(.5f)); g.drawLine(217, 277, 578, 277, 1);
+    for (int repeat = 0; repeat < 6; ++repeat) {
+        const float x = 223.f + repeat * 60;
+        const float height = 65.f * std::pow(settings.feedback, repeat) + 8;
+        const bool otherSide = repeat % 2 != 0;
+        const float center = 277.f + (otherSide ? 20 : -20) * settings.bounce;
+        const float level = otherSide ? right : left;
+        const auto colour = otherSide ? background : accent;
+        g.setColour(colour.withAlpha(.1f + level * .6f)); g.fillRect(x, center - height / 2, 30.f, height);
+        g.setColour(colour.withAlpha(.8f)); g.drawRect(x, center - height / 2, 30.f, height, 1.3f);
+    }
+    text(g, settings.enabled ? "DELAY / ENGAGED" : "DELAY / OFF", { 211, 337, 210, 19 }, 10, background);
+    text(g, "L / R ECHO", { 476, 337, 108, 19 }, 10, background);
 }
 void BatchlyEditor::timerCallback() {
     if (shownModule != processor.selectedModule()) showModule(processor.selectedModule());

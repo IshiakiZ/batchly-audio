@@ -346,5 +346,50 @@ for index, name in enumerate(("Clear vocal", "Silver top", "Drum shine", "Soft l
     sf.write(args.output / f"{20 + index:02}-gleam-{name.lower().replace(' ', '-')}.wav", bright.T, 48000, subtype="PCM_24")
     if index == 0: report["gleam_render_seconds_for_13_seconds"] = time.perf_counter() - start
 report["checks"].append("All five original Gleam presets render with no clipping")
+for sample_rate in (44100, 48000, 96000):
+    p = load_plugin(str(args.plugin)); p.program = "Cross town"
+    assert p.relay_enabled and not any(getattr(p,n) for n in ("drift_enabled","patina_enabled","atrium_enabled","chime_enabled","helix_enabled","gleam_enabled"))
+    impulse = np.zeros((2, sample_rate * 2), dtype=np.float32); impulse[:, 0] = .1
+    p.relay_mix = 0
+    assert np.max(np.abs(p(impulse,sample_rate)-impulse)) < 1e-6
+    p.relay_mix = 1; p.relay_motion = 0; p.relay_time_ms = 100
+    echoes = p(impulse,sample_rate,buffer_size=137)
+    assert np.isfinite(echoes).all() and np.max(np.abs(echoes)) < 1
+    assert np.max(np.abs(echoes[:,:int(sample_rate*.099)])) == 0
+    assert np.max(np.abs(echoes[0,int(sample_rate*.099):int(sample_rate*.12)])) > .005
+    assert np.max(np.abs(echoes[1,int(sample_rate*.199):int(sample_rate*.22)])) > .001
+    assert np.max(np.abs(echoes[0]-echoes[1])) > .001
+    assert p(impulse[:1],sample_rate).shape == impulse[:1].shape
+    p.bypass = True
+    assert np.max(np.abs(p(impulse,sample_rate)-impulse)) < 1e-6
+    p.bypass = False
+    assert np.max(np.abs(p(np.zeros_like(impulse),sample_rate))) == 0
+    report["checks"].append(f"{sample_rate} Hz: Relay dry, echo timing, alternating stereo repeats, mono, bypass, silence")
+p.relay_time_ms = 423; p.relay_feedback = .71
+# This host rounds text-inferred parameter steps when assigning physical values.
+# Compare the actual accepted normalized values to test lossless state recall.
+saved_time = p.parameters["relay_time_ms"].raw_value
+saved_feedback = p.parameters["relay_feedback"].raw_value
+for name in ("drift_enabled","patina_enabled","atrium_enabled","chime_enabled","helix_enabled","gleam_enabled"): setattr(p,name,True)
+saved = p.raw_state; p.program = "Bent signal"; p.raw_state = saved
+assert abs(p.parameters["relay_time_ms"].raw_value-saved_time) < 1e-7
+assert abs(p.parameters["relay_feedback"].raw_value-saved_feedback) < 1e-7
+assert all(getattr(p,name) for name in ("drift_enabled","patina_enabled","atrium_enabled","chime_enabled","helix_enabled","gleam_enabled","relay_enabled"))
+report["checks"].append("Seven-effect rack and edited delay time/feedback survive state recall")
+for version in ("drift-0.1.0","patina-0.2.0","atrium-0.3.0","chime-0.4.0","helix-0.5.0","gleam-0.6.0"):
+    p.relay_enabled = True
+    p.raw_state = (Path(__file__).resolve().parents[1] / f"tests/fixtures/{version}.bapreset").read_bytes()
+    assert not p.relay_enabled and abs(p.relay_time_ms-350) < .2
+    if version.startswith("gleam"): assert p.gleam_enabled and abs(p.gleam_air_db-6.3) < .02
+    report["checks"].append(f"Actual {version} state disables Relay and retains its saved rack")
+for index,name in enumerate(("Soft answer","Cross town","Short circuit","Long return","Bent signal")):
+    p = load_plugin(str(args.plugin)); p.program = name
+    start = time.perf_counter()
+    echoes = p(np.pad(source,((0,0),(0,48000*25))),48000,buffer_size=512)
+    assert np.isfinite(echoes).all() and np.max(np.abs(echoes)) < 1
+    assert np.max(np.abs(echoes[:,-48000:])) < .00001
+    sf.write(args.output/f"{25+index:02}-relay-{name.lower().replace(' ','-')}.wav",echoes.T,48000,subtype="PCM_24")
+    if index == 0: report["relay_render_seconds_for_37_seconds"] = time.perf_counter()-start
+report["checks"].append("Five original Relay presets render with decayed tails and no clipping")
 (args.output / "verification.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
 print(json.dumps(report, indent=2))

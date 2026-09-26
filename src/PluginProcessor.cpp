@@ -77,6 +77,15 @@ juce::AudioProcessorValueTreeState::ParameterLayout BatchlyProcessor::makeLayout
     add("gleam_width", "Gleam width", 0, 1.5f, 1);
     add("gleam_trim", "Gleam trim (dB)", -12, 0, -3);
     add("gleam_mix", "Gleam mix", 0, 1, 1);
+    layout.add(std::make_unique<juce::AudioParameterBool>(juce::ParameterID { "relay_enabled", 1 }, "Relay enabled", false));
+    add("relay_time", "Relay time (ms)", 10, 2000, 350, .5f);
+    add("relay_feedback", "Relay feedback", 0, .92f, .35f);
+    add("relay_tone", "Relay tone (Hz)", 500, 16000, 6500, .35f);
+    add("relay_motion", "Relay motion", 0, 1, .15f);
+    add("relay_rate", "Relay rate (Hz)", .05f, 5, .3f, .35f);
+    add("relay_bounce", "Relay bounce", 0, 1, .65f);
+    add("relay_glide", "Relay glide", 0, 1, .35f);
+    add("relay_mix", "Relay mix", 0, 1, .3f);
     return layout;
 }
 
@@ -96,6 +105,8 @@ BatchlyProcessor::BatchlyProcessor()
     for (size_t i = 0; i < helixValues.size(); ++i) helixValues[i] = parameters.getRawParameterValue(batchly::factoryIds[4][i]);
     gleamEnabled = parameters.getRawParameterValue("gleam_enabled");
     for (size_t i = 0; i < gleamValues.size(); ++i) gleamValues[i] = parameters.getRawParameterValue(batchly::factoryIds[5][i]);
+    relayEnabled = parameters.getRawParameterValue("relay_enabled");
+    for (size_t i = 0; i < relayValues.size(); ++i) relayValues[i] = parameters.getRawParameterValue(batchly::factoryIds[6][i]);
     formats.registerBasicFormats();
     if (isStandalone()) getBus(true, 0)->enable(false);
 }
@@ -154,6 +165,11 @@ batchly::RackParameters BatchlyProcessor::readRackParameters() const noexcept {
     p.gleam.focusHz = gleamValues[2]->load(); p.gleam.excite = gleamValues[3]->load();
     p.gleam.tame = gleamValues[4]->load(); p.gleam.width = gleamValues[5]->load();
     p.gleam.trimDb = gleamValues[6]->load(); p.gleam.mix = gleamValues[7]->load();
+    p.relay.enabled = relayEnabled->load() > .5f;
+    p.relay.timeMs = relayValues[0]->load(); p.relay.feedback = relayValues[1]->load();
+    p.relay.toneHz = relayValues[2]->load(); p.relay.motion = relayValues[3]->load();
+    p.relay.rateHz = relayValues[4]->load(); p.relay.bounce = relayValues[5]->load();
+    p.relay.glide = relayValues[6]->load(); p.relay.mix = relayValues[7]->load();
     return p;
 }
 double BatchlyProcessor::getTailLengthSeconds() const {
@@ -193,6 +209,7 @@ void BatchlyProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::Midi
     reverbLevel.store(engine.reverbPeak());
     const auto sweep = engine.helixSweep(); phaserLeft.store(sweep[0]); phaserRight.store(sweep[1]);
     brightnessLevel.store(engine.gleamHighLevel()); brightnessReduction.store(engine.gleamReduction());
+    const auto echoes = engine.relayLevels(); echoLeft.store(echoes[0]); echoRight.store(echoes[1]);
     const auto levels = engine.chimeLevels();
     for (size_t i = 0; i < levels.size(); ++i) resonatorLevels[i].store(levels[i]);
 }
@@ -240,7 +257,7 @@ bool BatchlyProcessor::isCurrentProgramModified() const {
 }
 void BatchlyProcessor::getStateInformation(juce::MemoryBlock& data) {
     auto state = parameters.copyState();
-    state.setProperty("schemaVersion", 6, nullptr);
+    state.setProperty("schemaVersion", 7, nullptr);
     state.setProperty("program", currentProgram.load(), nullptr);
     for (int module = 0; module < batchly::moduleCount; ++module)
         state.setProperty(batchly::programKeys[module], modulePrograms[module].load(), nullptr);

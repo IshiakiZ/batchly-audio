@@ -5,27 +5,29 @@
 namespace batchly {
 // One small table keeps navigation and saved program numbers in the same order.
 // New modules are appended so existing DAW automation and programs stay stable.
-inline constexpr int moduleCount = 6;
+inline constexpr int moduleCount = 7;
 inline constexpr int presetsPerModule = 5;
-inline constexpr const char* moduleNames[moduleCount] { "Drift", "Patina", "Atrium", "Chime", "Helix", "Gleam" };
-inline constexpr const char* enabledIds[moduleCount] { "drift_enabled", "patina_enabled", "atrium_enabled", "chime_enabled", "helix_enabled", "gleam_enabled" };
-inline constexpr const char* programKeys[moduleCount] { "driftProgram", "patinaProgram", "atriumProgram", "chimeProgram", "helixProgram", "gleamProgram" };
+inline constexpr const char* moduleNames[moduleCount] { "Drift", "Patina", "Atrium", "Chime", "Helix", "Gleam", "Relay" };
+inline constexpr const char* enabledIds[moduleCount] { "drift_enabled", "patina_enabled", "atrium_enabled", "chime_enabled", "helix_enabled", "gleam_enabled", "relay_enabled" };
+inline constexpr const char* programKeys[moduleCount] { "driftProgram", "patinaProgram", "atriumProgram", "chimeProgram", "helixProgram", "gleamProgram", "relayProgram" };
 inline constexpr const char* presetNames[moduleCount][presetsPerModule] {
     { "Soft focus", "Slow tide", "Wide room", "Worn motor", "Pure vibrato" },
     { "Fresh spool", "Pocket cassette", "Submerged", "Sun-bleached", "Midnight dub" },
     { "Open atrium", "Close walls", "Velvet hall", "Glass canopy", "After hours" },
     { "Glass strings", "Minor bells", "Copper choir", "Small music box", "Suspended air" },
     { "Slow orbit", "Silver sweep", "Deep current", "Retro spin", "Hollow metal" },
-    { "Clear vocal", "Silver top", "Drum shine", "Soft lift", "Open mix" }
+    { "Clear vocal", "Silver top", "Drum shine", "Soft lift", "Open mix" },
+    { "Soft answer", "Cross town", "Short circuit", "Long return", "Bent signal" }
 };
-inline constexpr int factoryControlCount[moduleCount] { 9, 8, 8, 11, 8, 8 };
+inline constexpr int factoryControlCount[moduleCount] { 9, 8, 8, 11, 8, 8, 8 };
 inline constexpr const char* factoryIds[moduleCount][11] {
     { "depth", "rate", "wander", "tone", "follow", "noise", "width", "mix", "output" },
     { "patina_sample", "patina_drive", "patina_wear", "patina_flutter", "patina_hiss", "patina_chorus", "patina_tone", "patina_mix" },
     { "atrium_decay", "atrium_size", "atrium_predelay", "atrium_damping", "atrium_lowcut", "atrium_motion", "atrium_width", "atrium_mix" },
     { "chime_ring", "chime_color", "chime_drive", "chime_spread", "chime_detune", "chime_motion", "chime_width", "chime_mix", "chime_root", "chime_scale", "chime_octave" },
     { "helix_rate", "helix_depth", "helix_feedback", "helix_center", "helix_tone", "helix_drive", "helix_width", "helix_mix" },
-    { "gleam_presence", "gleam_air", "gleam_focus", "gleam_excite", "gleam_tame", "gleam_width", "gleam_trim", "gleam_mix" }
+    { "gleam_presence", "gleam_air", "gleam_focus", "gleam_excite", "gleam_tame", "gleam_width", "gleam_trim", "gleam_mix" },
+    { "relay_time", "relay_feedback", "relay_tone", "relay_motion", "relay_rate", "relay_bounce", "relay_glide", "relay_mix" }
 };
 inline constexpr float factoryValues[moduleCount][presetsPerModule][11] {
     {
@@ -58,6 +60,12 @@ inline constexpr float factoryValues[moduleCount][presetsPerModule][11] {
         {4,5,6500,.3f,.6f,1.15f,-4,1},
         {1.5f,2,9000,0,.7f,1,-1.5f,1},
         {1,3,10000,.05f,.35f,1.2f,-2,1}
+    }, {
+        {350,.35f,6500,.15f,.3f,.65f,.35f,.3f},
+        {240,.55f,9000,.08f,.6f,1,.2f,.4f},
+        {85,.2f,4500,.25f,1.2f,.2f,.1f,.35f},
+        {780,.72f,2800,.2f,.16f,.85f,.6f,.4f},
+        {140,.5f,5500,.9f,2.2f,.8f,.8f,.5f}
     }
 };
 }
