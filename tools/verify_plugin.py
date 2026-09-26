@@ -445,5 +445,46 @@ for index,name in enumerate(("First strike","Heavy floor","Snare press","Soft ma
     sf.write(args.output/f"{31+index:02}-forge-{name.lower().replace(' ','-')}.wav",shaped.T,sr,subtype="PCM_24")
     if index==0:report["forge_render_seconds_for_9_seconds"]=time.perf_counter()-start
 report["checks"].append("Five Forge presets render original drums without clipping or residual tails")
+for sample_rate in (44100,48000,96000):
+    p=load_plugin(str(args.plugin));p.program="Fine grain"
+    assert p.cinder_enabled and not any(getattr(p,n) for n in ("drift_enabled","patina_enabled","atrium_enabled","chime_enabled","helix_enabled","gleam_enabled","relay_enabled","forge_enabled"))
+    t=np.arange(sample_rate)/sample_rate
+    probe=np.stack([.12*np.sin(2*np.pi*700*t)]*2).astype(np.float32)
+    p.cinder_mix=0
+    assert np.max(np.abs(p(probe,sample_rate)-probe))<1e-6
+    p.cinder_mix=1;p.cinder_grit=.6;p.cinder_noise=.7
+    texture=p(probe,sample_rate,buffer_size=137)
+    assert np.isfinite(texture).all() and np.sqrt(np.mean((texture-probe)**2))>.005
+    assert np.max(np.abs(texture[0]-texture[1]))>.001
+    p.cinder_width=0
+    centered=p(probe,sample_rate)
+    assert np.max(np.abs(centered[0]-centered[1]))<1e-7
+    assert p(probe[:1],sample_rate).shape==probe[:1].shape
+    p.bypass=True
+    assert np.max(np.abs(p(probe,sample_rate)-probe))<1e-6
+    p.bypass=False
+    assert np.max(np.abs(p(np.zeros_like(probe),sample_rate)))==0
+    report["checks"].append(f"{sample_rate} Hz: Cinder dry, texture, stereo, width, mono, bypass, idle silence")
+p.cinder_tone_focus_hz=731;p.cinder_decay_s=.43
+accepted={n:p.parameters[n].raw_value for n in ("cinder_tone_focus_hz","cinder_decay_s")}
+for name in ("drift_enabled","patina_enabled","atrium_enabled","chime_enabled","helix_enabled","gleam_enabled","relay_enabled","forge_enabled"):setattr(p,name,True)
+saved=p.raw_state;p.program="Ash cloud";p.raw_state=saved
+assert all(abs(p.parameters[n].raw_value-v)<1e-7 for n,v in accepted.items())
+assert all(getattr(p,n) for n in ("drift_enabled","patina_enabled","atrium_enabled","chime_enabled","helix_enabled","gleam_enabled","relay_enabled","forge_enabled","cinder_enabled"))
+report["checks"].append("Nine-effect rack and Cinder focus/decay survive state recall")
+for version in ("drift-0.1.0","patina-0.2.0","atrium-0.3.0","chime-0.4.0","helix-0.5.0","gleam-0.6.0","relay-0.7.0","forge-0.8.0"):
+    p.cinder_enabled=True
+    p.raw_state=(Path(__file__).resolve().parents[1]/f"tests/fixtures/{version}.bapreset").read_bytes()
+    assert not p.cinder_enabled and abs(p.cinder_decay_s-.15)<.002
+    if version.startswith("forge"):assert p.forge_enabled and p.relay_enabled
+    report["checks"].append(f"Actual {version} state disables Cinder and retains its saved rack")
+for index,name in enumerate(("Fine grain","Copper dust","Paper speaker","Ash cloud","Rough edge")):
+    p=load_plugin(str(args.plugin));p.program=name
+    start=time.perf_counter();textured=p(np.pad(drums,((0,0),(0,48000*9))),48000,buffer_size=257)
+    assert np.isfinite(textured).all() and np.max(np.abs(textured))<1
+    assert np.max(np.abs(textured[:,-48000:]))<1e-5
+    sf.write(args.output/f"{36+index:02}-cinder-{name.lower().replace(' ','-')}.wav",textured.T,48000,subtype="PCM_24")
+    if index==0:report["cinder_render_seconds_for_17_seconds"]=time.perf_counter()-start
+report["checks"].append("Five original Cinder presets render drums with decayed noise tails and no clipping")
 (args.output / "verification.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
 print(json.dumps(report, indent=2))

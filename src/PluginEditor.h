@@ -41,6 +41,7 @@ private:
     void drawEnhancer(juce::Graphics&);
     void drawDelay(juce::Graphics&);
     void drawDrums(juce::Graphics&);
+    void drawTexture(juce::Graphics&);
     BatchlyProcessor& processor;
     DeckLookAndFeel look;
     std::array<juce::Slider, 9> knobs;

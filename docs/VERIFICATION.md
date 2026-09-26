@@ -1,4 +1,4 @@
-Current addition: [Forge 0.8 verification](FORGE-VERIFICATION.md). Previous addition: [Relay 0.7 verification](RELAY-VERIFICATION.md). Earlier records below describe their tested versions.
+Current addition: [Cinder 0.9 verification](CINDER-VERIFICATION.md). Previous addition: [Forge 0.8 verification](FORGE-VERIFICATION.md). Earlier records below describe their tested versions.
 
 # Drift 0.1 verification record
 

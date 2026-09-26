@@ -33,6 +33,9 @@ add_test(NAME relay_dsp COMMAND relay_tests)
 add_executable(forge_tests tests/ForgeTests.cpp)
 target_include_directories(forge_tests PRIVATE src)
 add_test(NAME forge_dsp COMMAND forge_tests)
+add_executable(cinder_tests tests/CinderTests.cpp)
+target_include_directories(cinder_tests PRIVATE src)
+add_test(NAME cinder_dsp COMMAND cinder_tests)
 
 if(BATCHLY_BUILD_APP)
     # Pin the framework so a fresh checkout builds against the same audio wrapper.
@@ -52,7 +55,7 @@ if(BATCHLY_BUILD_APP)
         PLUGIN_CODE Badr
         FORMATS VST3 Standalone
         PRODUCT_NAME "Batchly Audio"
-        DESCRIPTION "Original modulation, tape color, reverb, resonance, phasing, brightness, echoes and drum shaping"
+        DESCRIPTION "Original modulation, tape color, reverb, resonance, phasing, brightness, echoes, drum shaping and texture"
         IS_SYNTH FALSE
         NEEDS_MIDI_INPUT FALSE
         NEEDS_MIDI_OUTPUT FALSE

@@ -45,6 +45,15 @@ int main(int argc, char** argv) {
                             slider->setValue(slider->getValueFromText("-4.7 dB"),juce::sendNotificationSync);
                             require(std::abs(processor.readRackParameters().forge.ceilingDb+4.7f)<.0001f,"Forge Ceiling control is disconnected");
                         }
+                        if (module == 8 && slider->getName() == "NOISE FOCUS") {
+                            slider->setValue(slider->getValueFromText("4.2 kHz"),juce::sendNotificationSync);
+                            require(std::abs(processor.readRackParameters().cinder.noiseHz-4200)<.01f,"Cinder frequency units or attachment failed");
+                        }
+                        if (module == 8 && slider->getName() == "DECAY") {
+                            require(formatted.endsWith(" s"),"Cinder decay has the wrong unit");
+                            slider->setValue(slider->getValueFromText("0.43 s"),juce::sendNotificationSync);
+                            require(std::abs(processor.readRackParameters().cinder.decaySeconds-.43f)<.0001f,"Cinder Decay control is disconnected");
+                        }
                     }
                     if (auto* combo = dynamic_cast<juce::ComboBox*>(child))
                         if (combo->getNumItems() == batchly::presetsPerModule && combo->getName().isEmpty()) presetMenu = combo;
@@ -93,7 +102,7 @@ int main(int argc, char** argv) {
                 }
             }
         }
-        std::cout << "PASS: native pages render; controls fit; selected icons are visible; preset callbacks, time, signed Punch and Ceiling attachments work\n";
+        std::cout << "PASS: native pages render; controls fit; selected icons are visible; presets and tested time, gain, signed and frequency attachments work\n";
         return 0;
     } catch (const std::exception& e) { std::cerr << "FAIL: " << e.what() << '\n'; return 1; }
 }
