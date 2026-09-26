@@ -67,6 +67,15 @@ int main(int argc, char** argv) {
                             slider->setValue(slider->getValueFromText("-7.2 dB"),juce::sendNotificationSync);
                             require(std::abs(processor.readRackParameters().ember.trimDb+7.2f)<.0001f,"Ember Trim control is disconnected");
                         }
+                        if (module == 10 && slider->getName() == "DELAY") {
+                            require(formatted.contains("ms"),"Vista delay has the wrong unit");
+                            slider->setValue(slider->getValueFromText("23 ms"),juce::sendNotificationSync);
+                            require(std::abs(processor.readRackParameters().vista.delayMs-23)<.001f,"Vista delay control is disconnected");
+                        }
+                        if (module == 10 && slider->getName() == "HIGH WIDTH") {
+                            slider->setValue(slider->getValueFromText("173 %"),juce::sendNotificationSync);
+                            require(std::abs(processor.readRackParameters().vista.highWidth-1.73f)<.0001f,"Vista width percent conversion failed");
+                        }
                     }
                     if (auto* combo = dynamic_cast<juce::ComboBox*>(child))
                         if (combo->getNumItems() == batchly::presetsPerModule && combo->getName().isEmpty()) presetMenu = combo;

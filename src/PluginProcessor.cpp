@@ -113,6 +113,15 @@ juce::AudioProcessorValueTreeState::ParameterLayout BatchlyProcessor::makeLayout
     add("ember_bias", "Ember bias", 0, 1, .12f);
     add("ember_trim", "Ember trim (dB)", -18, 0, -5);
     add("ember_mix", "Ember mix", 0, 1, 1);
+    layout.add(std::make_unique<juce::AudioParameterBool>(juce::ParameterID { "vista_enabled", 1 }, "Vista enabled", false));
+    add("vista_low", "Vista low width", 0, 2, .8f);
+    add("vista_mid", "Vista mid width", 0, 2, 1.1f);
+    add("vista_high", "Vista high width", 0, 2, 1.3f);
+    add("vista_low_split", "Vista low split (Hz)", 60, 600, 180, .5f);
+    add("vista_high_split", "Vista high split (Hz)", 1200, 12000, 3500, .5f);
+    add("vista_spread", "Vista spread", 0, 1, 0);
+    add("vista_delay", "Vista delay (ms)", 1, 30, 11);
+    add("vista_mix", "Vista mix", 0, 1, 1);
     return layout;
 }
 
@@ -140,6 +149,8 @@ BatchlyProcessor::BatchlyProcessor()
     for (size_t i = 0; i < cinderValues.size(); ++i) cinderValues[i] = parameters.getRawParameterValue(batchly::factoryIds[8][i]);
     emberEnabled = parameters.getRawParameterValue("ember_enabled");
     for (size_t i = 0; i < emberValues.size(); ++i) emberValues[i] = parameters.getRawParameterValue(batchly::factoryIds[9][i]);
+    vistaEnabled = parameters.getRawParameterValue("vista_enabled");
+    for (size_t i = 0; i < vistaValues.size(); ++i) vistaValues[i] = parameters.getRawParameterValue(batchly::factoryIds[10][i]);
     formats.registerBasicFormats();
     if (isStandalone()) getBus(true, 0)->enable(false);
 }
@@ -218,6 +229,11 @@ batchly::RackParameters BatchlyProcessor::readRackParameters() const noexcept {
     p.ember.color = emberValues[2]->load(); p.ember.filterHz = emberValues[3]->load();
     p.ember.anchor = emberValues[4]->load(); p.ember.bias = emberValues[5]->load();
     p.ember.trimDb = emberValues[6]->load(); p.ember.mix = emberValues[7]->load();
+    p.vista.enabled = vistaEnabled->load() > .5f;
+    p.vista.lowWidth = vistaValues[0]->load(); p.vista.midWidth = vistaValues[1]->load();
+    p.vista.highWidth = vistaValues[2]->load(); p.vista.lowHz = vistaValues[3]->load();
+    p.vista.highHz = vistaValues[4]->load(); p.vista.spread = vistaValues[5]->load();
+    p.vista.delayMs = vistaValues[6]->load(); p.vista.mix = vistaValues[7]->load();
     return p;
 }
 double BatchlyProcessor::getTailLengthSeconds() const {
@@ -261,6 +277,7 @@ void BatchlyProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::Midi
     const auto drums = engine.forgeActivity(); drumAttack.store(drums[0]); drumClipping.store(drums[1]);
     const auto texture = engine.cinderLevels(); gritLevel.store(texture[0]); textureLevel.store(texture[1]);
     const auto bass = engine.emberLevels(); bassInput.store(bass[0]); bassWet.store(bass[1]);
+    const auto stereo = engine.vistaLevels(); stereoMid.store(stereo[0]); stereoSide.store(stereo[1]);
     const auto levels = engine.chimeLevels();
     for (size_t i = 0; i < levels.size(); ++i) resonatorLevels[i].store(levels[i]);
 }
@@ -308,7 +325,7 @@ bool BatchlyProcessor::isCurrentProgramModified() const {
 }
 void BatchlyProcessor::getStateInformation(juce::MemoryBlock& data) {
     auto state = parameters.copyState();
-    state.setProperty("schemaVersion", 10, nullptr);
+    state.setProperty("schemaVersion", 11, nullptr);
     state.setProperty("program", currentProgram.load(), nullptr);
     for (int module = 0; module < batchly::moduleCount; ++module)
         state.setProperty(batchly::programKeys[module], modulePrograms[module].load(), nullptr);

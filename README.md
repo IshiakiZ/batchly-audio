@@ -1,6 +1,6 @@
 # Batchly Audio
 
-An original open-source audio collection for Windows and VST3 hosts. Version 0.10 adds **Ember**, a bass saturation and harmonic shaping effect, alongside **Drift** chorus/vibrato, **Patina** tape coloration, **Atrium** reverb, **Chime** harmonic resonance, **Helix** stereo phasing, **Gleam** presence/air, **Relay** moving delay **Forge** drum shaping and **Cinder** tonal/noise texture. Each effect has its own controls, illustration and sidebar icon.
+An original open-source audio collection for Windows and VST3 hosts. Version 0.11 adds **Vista**, a three-band stereo width effect, alongside **Drift** chorus/vibrato, **Patina** tape coloration, **Atrium** reverb, **Chime** harmonic resonance, **Helix** stereo phasing, **Gleam** presence/air, **Relay** moving delay **Forge** drum shaping **Cinder** tonal/noise texture and **Ember** bass saturation. Each effect has its own controls, illustration and sidebar icon.
 
 Drift combines smooth randomized delay modulation, periodic modulation, stereo spread, an envelope-controlled low-pass filter and optional generated hiss. Its sound engine, layout, presets, graphics and demo audio were written for this project. It does not load or require a Cymatics plugin.
 
@@ -12,13 +12,13 @@ The desktop app can open or accept a dropped mono/stereo WAV, AIFF, FLAC, MP3 or
 
 ## The rack and Patina
 
-Select an effect in the sidebar, then click its **ON/OFF** button to enable or disable it. Each sidebar button shows its effect's on/off state; the collection scrolls when needed. Selecting a page only changes the controls you see; it does not change the audio routing. Audio flows through **Drift, Patina, Atrium, Chime, Helix, Gleam, Relay, Forge, Cinder, then Ember**, followed by shared Output. **BYPASS** bypasses the whole rack. New instances start with Drift on, the other effects off.
+Select an effect in the sidebar, then click its **ON/OFF** button to enable or disable it. Each sidebar button shows its effect's on/off state; the collection scrolls when needed. Selecting a page only changes the controls you see; it does not change the audio routing. Audio flows through **Drift, Patina, Atrium, Chime, Helix, Gleam, Relay, Forge, Cinder, Ember, then Vista**, followed by shared Output. **BYPASS** bypasses the whole rack. New instances start with Drift on, the other effects off.
 
 Patina's **Sample rate** softens high frequencies through a filtered rate reducer. **Drive** adds original soft saturation; **Wear** and **Flutter** add slow and fast pitch variation. **Hiss** generates noise, **Chorus** adds a stereo voice, **Tone** rolls off the top end, and **Mix** blends the effect. Hiss defaults to zero. Rates above the host's rate use the host rate; the tape display shows the effective rate. Its filters have finite slopes and are not brick-wall filters.
 
-Try **Fresh spool**, **Pocket cassette**, **Submerged**, **Sun-bleached**, and **Midnight dub**. The on-screen preset menu affects the displayed effect and enables it. DAW program selection recalls a single-effect starting point. Saved `.bapreset` files contain the entire rack. The wet tape path has an intentional variable delay of approximately 9-25 ms; partially wet settings can add comb coloration. The rack still reports zero latency because its dry path is immediate. With Atrium, Chime, Helix, Gleam, Relay, Forge, Cinder and Ember off, exports include a 160 ms tail when Patina is enabled.
+Try **Fresh spool**, **Pocket cassette**, **Submerged**, **Sun-bleached**, and **Midnight dub**. The on-screen preset menu affects the displayed effect and enables it. DAW program selection recalls a single-effect starting point. Saved `.bapreset` files contain the entire rack. The wet tape path has an intentional variable delay of approximately 9-25 ms; partially wet settings can add comb coloration. The rack still reports zero latency because its dry path is immediate. With Atrium, Chime, Helix, Gleam, Relay, Forge, Cinder, Ember and Vista off, exports include a 160 ms tail when Patina is enabled.
 
-Existing 0.1 Drift projects and presets load with Drift enabled and Patina disabled. Version 0.1 and 0.2 states both load with Atrium off. Original parameter IDs, order, plugin identity and the first forty-five host program names remain unchanged.
+Existing 0.1 Drift projects and presets load with Drift enabled and Patina disabled. Version 0.1 and 0.2 states both load with Atrium off. Original parameter IDs, order, plugin identity and the first fifty host program names remain unchanged.
 
 ## Atrium
 
@@ -28,7 +28,7 @@ Select **Atrium**, then turn **ATRIUM OFF** on. Try **Open atrium**, **Close wal
 
 The room illustration responds to Size and the measured wet level; it is not a measured acoustic response. Size and pre-delay changes can bend the tail's pitch. Atrium is one original room algorithm with five starting points, not a physical room model or a set of sampled impulse responses.
 
-With Atrium enabled, exports reserve twice Decay, plus Pre-delay and 0.8 seconds, for the tail. The VST3 reports the same allowance to its host. A DAW can still apply its own render-tail setting. With Atrium, Chime, Helix, Gleam, Relay, Forge, Cinder and Ember off, exports retain the earlier 80 ms allowance, or 160 ms when Patina is on. Processing adds no delay to the dry path.
+With Atrium enabled, exports reserve twice Decay, plus Pre-delay and 0.8 seconds, for the tail. The VST3 reports the same allowance to its host. A DAW can still apply its own render-tail setting. With Atrium, Chime, Helix, Gleam, Relay, Forge, Cinder, Ember and Vista off, exports retain the earlier 80 ms allowance, or 160 ms when Patina is on. Processing adds no delay to the dry path.
 
 **Save** and **Load** store `.bapreset` files. A DAW also saves the plugin's controls in its project. The starting-point menu selects factory settings; controls can then be edited freely.
 
@@ -89,6 +89,14 @@ Select **Ember** and try **Warm foundation**, **Wire bass**, **Dense floor**, **
 **Color** darkens or brightens the signal before saturation. **Filter** softens the output afterward. **Anchor** restores some of the original bass below roughly 150 Hz before level trimming; it is not a subharmonic generator. **Bias** makes the curves asymmetric for even harmonics, with DC removal afterward. **Trim** compensates for level, and **Mix** blends with the original signal.
 
 The engine averages each curve between adjacent input samples to reduce nonlinear aliasing. This changes the wet frequency response and introduces a small frequency-dependent phase shift; it does not eliminate aliasing or add an integer sample of reported host latency. The dry branch remains immediate. The displayed curve illustrates the static shaper before filtering, Anchor and Trim; the Input and Wet bars show measured peaks. This is an original bass coloration design, not a hardware circuit model. Ember adds 0.6 seconds to the tail allowance and remains off in older projects.
+
+## Vista
+
+Select **Vista** and try **Open window**, **Centered bass**, **Mono bloom**, **Narrow room**, or **Air frame**. **Low Width**, **Mid Width** and **High Width** change the stereo difference in three broad frequency regions. 100% keeps a region's original width, zero centers it, and 200% doubles its side level. **Low Split** and **High Split** move the gentle transitions. The bands overlap; they are not brick-wall crossovers.
+
+**Spread** creates an additional stereo difference from the center signal above Low Split. **Delay** sets this layer's time offset from 1 to 30 ms. Moving Delay can bend its pitch. The added signal goes to the two channels with opposite polarity, preserving the original left-plus-right sum. **Mix** blends the changed image with the original. True mono host tracks stay unchanged; a stereo track carrying the same sound in both channels can be widened by Spread.
+
+With all widths at 100% and Spread at zero, Vista is exactly neutral. Wider settings can increase individual channel peaks, so watch Output. Mono compatibility refers to Vista's own output; later nonlinear effects or separate channel processing can change it. The display illustrates the width settings and measures Mid/Side peaks, rather than showing a vectorscope. Vista adds 0.5 seconds to the tail allowance and stays off in all older projects.
 
 ## FL Studio and other VST3 hosts
 
