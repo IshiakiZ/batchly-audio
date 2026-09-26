@@ -78,6 +78,16 @@ The [official Corrosion description](https://cymatics.fm/products/corrosion-tona
 
 The five presets, grain icon and dotted-band illustration are original. The display indicates control regions and measured layer activity, not a measured spectrum. This is an original texture effect rather than an exact recreation of Corrosion's algorithms. Its nonlinear layer is not oversampled. See `CINDER-VERIFICATION.md` for checks and remaining limits.
 
+## Ember
+
+The [official Vortex description](https://cymatics.fm/products/vortex-808-enhancer-plugin), consulted September 26, 2026, establishes the musical role of bass saturation with varied harmonic character and tone control. Ember uses original code, presets and graphics. No commercial source, binary internals, factory settings or processed audio were incorporated.
+
+`src/EmberEngine.h` continuously blends independently selected tanh, scaled arctangent, softsign and sine curves. Each curve is averaged between adjacent driven samples using its analytic antiderivative, with a midpoint fallback near equal inputs. The mathematical method is described by Bilbao, Esqueda, Parker and Valimaki in [Antiderivative Antialiasing for Memoryless Nonlinearities](https://www.research.ed.ac.uk/en/publications/antiderivative-antialiasing-for-memoryless-nonlinearities/). The implementation was independently written from the mathematical method, with numerical integration and spectral tests; no external implementation was copied.
+
+Original design choices include complementary pre-color around 700 Hz, smoothed drive and curve morphing, a shared instantaneous bias on both averaging endpoints, 5 Hz DC removal, output low-pass filtering, original-bass restoration around 150 Hz, trim and dry/wet blend. Fixed arrays allocate no memory while processing. Averaging reduces particular alias products but does not remove all aliasing. Its wet-path smoothing and filter phase are intentional; the dry path is immediate. These are original shapers, not Vortex's named analog circuit models.
+
+The five presets, flame icon and static curve illustration are original. The curve drawing excludes filtering, Anchor and Trim; its label names the nearest curve anchor. Measured Input and Wet bars indicate activity. Old states retain their processing with Ember off. See `EMBER-VERIFICATION.md` for checks and limits.
+
 ## Framework
 
 JUCE 9.0.2 is pinned to commit `72782788ce18c2d4d760b28e0921d6ffc6431102`. It supplies the GUI, audio-device management, file reading/writing, parameter management, and VST3/standalone wrappers. It does not implement Drift's effect algorithm.

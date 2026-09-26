@@ -55,6 +55,7 @@ public:
     std::atomic<float> echoLeft { 0 }, echoRight { 0 };
     std::atomic<float> drumAttack { 0 }, drumClipping { 0 };
     std::atomic<float> gritLevel { 0 }, textureLevel { 0 };
+    std::atomic<float> bassInput { 0 }, bassWet { 0 };
     std::array<std::atomic<float>, 7> resonatorLevels {};
 
 private:
@@ -68,6 +69,7 @@ private:
     std::array<std::atomic<float>*, 8> relayValues {};
     std::array<std::atomic<float>*, 8> forgeValues {};
     std::array<std::atomic<float>*, 8> cinderValues {};
+    std::array<std::atomic<float>*, 8> emberValues {};
     std::atomic<float>* driftEnabled = nullptr;
     std::atomic<float>* patinaEnabled = nullptr;
     std::atomic<float>* atriumEnabled = nullptr;
@@ -77,6 +79,7 @@ private:
     std::atomic<float>* relayEnabled = nullptr;
     std::atomic<float>* forgeEnabled = nullptr;
     std::atomic<float>* cinderEnabled = nullptr;
+    std::atomic<float>* emberEnabled = nullptr;
     batchly::RackEngine engine;
     std::atomic<int> currentProgram { 0 };
     std::array<std::atomic<int>, batchly::moduleCount> modulePrograms {};

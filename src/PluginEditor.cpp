@@ -100,6 +100,19 @@ const std::array<const char*, 9> cinderHints {
     "Scale both added layers together. Zero returns the original sound exactly.",
     "Final gain after all effects. Keep the output meter below 0 dB."
 };
+const std::array<const char*, 9> emberIds { "ember_drive", "ember_shape", "ember_color", "ember_filter", "ember_anchor", "ember_bias", "ember_trim", "ember_mix", "output" };
+const std::array<const char*, 9> emberTitles { "DRIVE", "SHAPE", "COLOR", "FILTER", "ANCHOR", "BIAS", "TRIM", "MIX", "OUTPUT" };
+const std::array<const char*, 9> emberHints {
+    "Gain into the saturation curves. Trim can compensate for the added level.",
+    "Morph through four original curves: Round at 0%, Edge at 33%, Dense at 67%, Fold at 100%.",
+    "Brighten or soften the signal before saturation. Negative values favor a warmer sound.",
+    "Low-pass filter after saturation. Lower it to soften generated harmonics.",
+    "Restore more of the original low-frequency signal around 150 Hz while retaining upper harmonics.",
+    "Shift the nonlinear curve to add asymmetric coloration and even harmonics. DC is filtered afterward.",
+    "Level compensation inside Ember, before its dry/wet mix.",
+    "Blend the original with saturated bass. Zero returns the original signal exactly.",
+    "Final gain after all effects. Keep the output meter below 0 dB."
+};
 const std::array<const char*, 9> reverbIds { "atrium_decay", "atrium_size", "atrium_predelay", "atrium_damping",
     "atrium_lowcut", "atrium_motion", "atrium_width", "atrium_mix", "output" };
 const std::array<const char*, 9> reverbTitles { "DECAY", "SIZE", "PRE-DELAY", "DAMPING", "LOW CUT", "MOTION", "WIDTH", "MIX", "OUTPUT" };
@@ -301,6 +314,12 @@ void DeckLookAndFeel::drawButtonText(juce::Graphics& g, juce::TextButton& button
             g.fillRect(x,y+yOffset,3.f+(n%2)*2,3.f+(n%2)*2);
         }
     }
+    if (button.getButtonText() == "Ember") {
+        juce::Path flame;flame.startNewSubPath(28,y-15);flame.cubicTo(44,y,43,y+13,29,y+15);
+        flame.cubicTo(10,y+14,12,y,21,y-5);flame.lineTo(23,y+4);flame.closeSubPath();
+        g.setColour(colour);g.strokePath(flame,juce::PathStrokeType(1.8f));
+        g.setColour(accent);g.drawLine(25,y+9,30,y-2,2);
+    }
     g.setColour(colour); g.setFont(brandFont(18, true));
     g.drawText(button.getButtonText(), 53, 10, button.getWidth() - 58, 27, juce::Justification::centredLeft);
     const bool enabled = static_cast<bool>(button.getProperties()["effectEnabled"]);
@@ -411,27 +430,28 @@ void BatchlyEditor::configureKnobs() {
     const bool relay = shownModule == 6;
     const bool forge = shownModule == 7;
     const bool cinder = shownModule == 8;
-    const std::array<const char*, 9>* controlIds[] { &ids, &tapeIds, &reverbIds, &chimeIds, &helixIds, &gleamIds, &relayIds, &forgeIds, &cinderIds };
-    const std::array<const char*, 9>* controlTitles[] { &titles, &tapeTitles, &reverbTitles, &chimeTitles, &helixTitles, &gleamTitles, &relayTitles, &forgeTitles, &cinderTitles };
-    const std::array<const char*, 9>* controlHints[] { &hints, &tapeHints, &reverbHints, &chimeHints, &helixHints, &gleamHints, &relayHints, &forgeHints, &cinderHints };
+    const bool ember = shownModule == 9;
+    const std::array<const char*, 9>* controlIds[] { &ids, &tapeIds, &reverbIds, &chimeIds, &helixIds, &gleamIds, &relayIds, &forgeIds, &cinderIds, &emberIds };
+    const std::array<const char*, 9>* controlTitles[] { &titles, &tapeTitles, &reverbTitles, &chimeTitles, &helixTitles, &gleamTitles, &relayTitles, &forgeTitles, &cinderTitles, &emberTitles };
+    const std::array<const char*, 9>* controlHints[] { &hints, &tapeHints, &reverbHints, &chimeHints, &helixHints, &gleamHints, &relayHints, &forgeHints, &cinderHints, &emberHints };
     for (size_t i = 0; i < knobs.size(); ++i) {
         attachments[i].reset();
         auto& knob = knobs[i];
         const auto id = (*controlIds[shownModule])[i];
         attachments[i] = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(processor.parameters, id, knob);
-        const bool frequency = cinder ? (i == 2 || i == 3) : forge ? false : relay ? (i == 2 || i == 4) : gleam ? i == 2 : helix ? (i == 0 || i == 3 || i == 4) : chime ? i == 1 : reverb ? (i == 3 || i == 4) : tape ? (i == 0 || i == 6) : (i == 1 || i == 3);
-        knob.textFromValueFunction = [i, frequency, reverb, chime, gleam, relay, forge, cinder](double value) {
+        const bool frequency = ember ? i == 3 : cinder ? (i == 2 || i == 3) : forge ? false : relay ? (i == 2 || i == 4) : gleam ? i == 2 : helix ? (i == 0 || i == 3 || i == 4) : chime ? i == 1 : reverb ? (i == 3 || i == 4) : tape ? (i == 0 || i == 6) : (i == 1 || i == 3);
+        knob.textFromValueFunction = [i, frequency, reverb, chime, gleam, relay, forge, cinder, ember](double value) {
             if (((reverb || chime) && i == 0) || (cinder && i == 5)) return juce::String(value, 2) + " s";
             if ((reverb && i == 2) || (relay && i == 0)) return juce::String(value, 1) + " ms";
             if (frequency) return value >= 1000 ? juce::String(value / 1000, 2) + " kHz" : juce::String(value, 2) + " Hz";
-            if (i == 8 || (gleam && (i == 0 || i == 1 || i == 6)) || (forge && (i == 2 || i == 3 || i == 5))) return juce::String(value, 1) + " dB";
+            if (i == 8 || (gleam && (i == 0 || i == 1 || i == 6)) || (forge && (i == 2 || i == 3 || i == 5)) || (ember && (i == 0 || i == 6))) return juce::String(value, 1) + " dB";
             return juce::String(value * 100, 0) + " %";
         };
-        knob.valueFromTextFunction = [i, frequency, reverb, chime, gleam, relay, forge, cinder](const juce::String& value) {
+        knob.valueFromTextFunction = [i, frequency, reverb, chime, gleam, relay, forge, cinder, ember](const juce::String& value) {
             const auto number = value.getDoubleValue();
             if ((reverb && (i == 0 || i == 2)) || (chime && i == 0) || (relay && i == 0) || (cinder && i == 5)) return number;
             if (frequency) return number * (value.containsIgnoreCase("k") ? 1000 : 1);
-            return i == 8 || (gleam && (i == 0 || i == 1 || i == 6)) || (forge && (i == 2 || i == 3 || i == 5)) ? number : number / 100;
+            return i == 8 || (gleam && (i == 0 || i == 1 || i == 6)) || (forge && (i == 2 || i == 3 || i == 5)) || (ember && (i == 0 || i == 6)) ? number : number / 100;
         };
         knob.setName((*controlTitles[shownModule])[i]);
         knob.setTooltip((*controlHints[shownModule])[i]);
@@ -484,7 +504,7 @@ void BatchlyEditor::paint(juce::Graphics& g) {
     text(g, "LOCAL AUDIO", { 24, 561, 132, 20 }, 10, muted, true);
     text(g, "Open source", { 24, 589, 125, 20 }, 13, ink);
     text(g, "v" + juce::String(batchly::UpdateService::currentVersion), { 24, 610, 140, 18 }, 9, muted);
-    text(g, "AUDIO TOOLS / 00" + juce::String(shownModule + 1), { 196, 20, 200, 32 }, 11, muted);
+    text(g, "AUDIO TOOLS / " + juce::String(shownModule + 1).paddedLeft('0', 3), { 196, 20, 200, 32 }, 11, muted);
     g.setGradientFill(juce::ColourGradient(juce::Colour(0xffeeeceb), 192, 84, juce::Colour(0xffd4d2d0), 980, 159, false));
     g.fillRect(190, 87, 792, 70);
     for (int y = 90; y < 153; y += 3) {
@@ -492,9 +512,9 @@ void BatchlyEditor::paint(juce::Graphics& g) {
     }
     text(g, juce::String(moduleNames[shownModule]).toUpperCase(), { 211, 91, 185, 61 }, shownModule == 0 ? 48.f : 42.f, ink, true);
     g.setColour(accent); g.fillRect(396, 106, 3, 33);
-    const std::array<const char*, 9> subtitles { "RANDOM-MOTION CHORUS & VIBRATO", "TAPE COLOR & PITCH WEAR", "SPACIOUS ROOMS & MOVING TAILS", "TUNED STRINGS & HARMONIC COLOR", "STEREO SWEEPS & PHASE ROTATION", "PRESENCE, AIR & SOFT BRILLIANCE", "MOVING ECHOES & STEREO RETURNS", "DRUM ATTACK, BODY & SOFT CLIPPING", "TONAL GRIT & MOVING TEXTURE" };
-    const std::array<const char*, 9> descriptions { "Slow movement. Soft edges. A little room to wander.",
-        "Soft edges. Warm reels. A little history in every note.", "Close walls. Open halls. Give each note a place to linger.", "Strike a note. Find its colors. Let the strings answer.", "Slow circles. Deep notches. Keep the sound in motion.", "Open the top. Keep the body. Let the detail shine.", "Send it out. Let it wander. Hear it come back.", "Shape the strike. Add weight. Hold the peaks.", "Find the grain. Shape the dust. Leave a trace." };
+    const std::array<const char*, 10> subtitles { "RANDOM-MOTION CHORUS & VIBRATO", "TAPE COLOR & PITCH WEAR", "SPACIOUS ROOMS & MOVING TAILS", "TUNED STRINGS & HARMONIC COLOR", "STEREO SWEEPS & PHASE ROTATION", "PRESENCE, AIR & SOFT BRILLIANCE", "MOVING ECHOES & STEREO RETURNS", "DRUM ATTACK, BODY & SOFT CLIPPING", "TONAL GRIT & MOVING TEXTURE", "BASS SATURATION & HARMONIC WEIGHT" };
+    const std::array<const char*, 10> descriptions { "Slow movement. Soft edges. A little room to wander.",
+        "Soft edges. Warm reels. A little history in every note.", "Close walls. Open halls. Give each note a place to linger.", "Strike a note. Find its colors. Let the strings answer.", "Slow circles. Deep notches. Keep the sound in motion.", "Open the top. Keep the body. Let the detail shine.", "Send it out. Let it wander. Hear it come back.", "Shape the strike. Add weight. Hold the peaks.", "Find the grain. Shape the dust. Leave a trace.", "Warm the core. Bend the curve. Keep the foundation." };
     text(g, subtitles[shownModule], { 420, 107, 473, 20 }, 13, ink, true);
     text(g, descriptions[shownModule], { 420, 129, 496, 18 }, 12, muted);
     screw(g, 203, 101); screw(g, 969, 101); screw(g, 203, 144); screw(g, 969, 144);
@@ -507,6 +527,7 @@ void BatchlyEditor::paint(juce::Graphics& g) {
     else if (shownModule == 6) drawDelay(g);
     else if (shownModule == 7) drawDrums(g);
     else if (shownModule == 8) drawTexture(g);
+    else if (shownModule == 9) drawBass(g);
     else {
     g.setColour(ink); g.fillRect(scope);
     g.setColour(rule); g.drawRect(scope, 1);
@@ -527,8 +548,8 @@ void BatchlyEditor::paint(juce::Graphics& g) {
     };
     drawHistory(rightHistory, background); drawHistory(leftHistory, accent); g.restoreState();
     }
-    text(g, shownModule == 8 ? "BAND FOCUS" : shownModule == 7 ? "TONE" : shownModule == 6 ? "ECHO COLOR" : shownModule == 5 ? "BRIGHTNESS" : shownModule == 4 ? "RESONANCE" : shownModule == 3 ? "EXCITATION" : shownModule == 2 ? "ARRIVAL" : "MOVEMENT", { 202, 380, 125, 18 }, 10, accentText, true);
-    text(g, shownModule == 8 ? "COLOR / RELEASE" : shownModule == 7 ? "COLOR / PEAKS" : shownModule == 6 ? "PITCH / MOVEMENT" : shownModule == 5 ? "COLOR / CONTROL" : shownModule == 4 ? "FILTER / DRIVE" : shownModule == 3 ? "TUNING / MOTION" : shownModule == 2 ? "TONE / MOTION" : "CHARACTER", { 337, 380, 370, 18 }, 10, accentText, true);
+    text(g, shownModule == 9 ? "TONE" : shownModule == 8 ? "BAND FOCUS" : shownModule == 7 ? "TONE" : shownModule == 6 ? "ECHO COLOR" : shownModule == 5 ? "BRIGHTNESS" : shownModule == 4 ? "RESONANCE" : shownModule == 3 ? "EXCITATION" : shownModule == 2 ? "ARRIVAL" : "MOVEMENT", { 202, 380, 125, 18 }, 10, accentText, true);
+    text(g, shownModule == 9 ? "BODY / COLOR" : shownModule == 8 ? "COLOR / RELEASE" : shownModule == 7 ? "COLOR / PEAKS" : shownModule == 6 ? "PITCH / MOVEMENT" : shownModule == 5 ? "COLOR / CONTROL" : shownModule == 4 ? "FILTER / DRIVE" : shownModule == 3 ? "TUNING / MOTION" : shownModule == 2 ? "TONE / MOTION" : "CHARACTER", { 337, 380, 370, 18 }, 10, accentText, true);
     text(g, "IMAGE / BLEND", { 719, 380, 254, 18 }, 10, accentText, true);
     g.setColour(rule); g.drawHorizontalLine(552, 195, 977);
     g.setColour(panel); g.fillRect(636, 568, 142, 12);
@@ -732,6 +753,27 @@ void BatchlyEditor::drawTexture(juce::Graphics& g) {
     g.setColour(accent);g.strokePath(ridge,juce::PathStrokeType(2));
     text(g,settings.enabled?"TEXTURE / ENGAGED":"TEXTURE / OFF",{211,337,220,19},10,background);
     text(g,"TONE + NOISE",{468,337,116,19},10,background);
+}
+void BatchlyEditor::drawBass(juce::Graphics& g) {
+    const auto settings=processor.readRackParameters().ember;
+    g.setColour(ink);g.fillRect(196,184,398,182);g.setColour(rule);g.drawRect(196,184,398,182);
+    text(g,"CURVE / HARMONICS",{211,193,230,20},10,background);
+    const char* names[]{"ROUND","EDGE","DENSE","FOLD"};
+    text(g,names[juce::jlimit(0,3,static_cast<int>(settings.shape*3+.5f))],{500,193,83,20},10,background);
+    g.setColour(muted);g.drawLine(219,275,570,275,1);g.drawLine(395,222,395,329,1);
+    juce::Path curve;
+    const double gain=std::pow(10.0,settings.driveDb/20),bias=settings.bias*.6;
+    for(int n=0;n<=350;++n){
+        const double x=(n/350.0*2-1)*gain;
+        const double y=batchly::EmberEngine::averagedCurve(x+bias,x+bias,settings.shape)-batchly::EmberEngine::averagedCurve(bias,bias,settings.shape);
+        const float px=220.f+n,py=275.f-static_cast<float>(y)*30;
+        if(n==0)curve.startNewSubPath(px,py);else curve.lineTo(px,py);
+    }
+    g.setColour(accent);g.strokePath(curve,juce::PathStrokeType(2));
+    text(g,"INPUT",{213,337,52,19},9,background);text(g,"WET",{406,337,44,19},9,background);
+    g.setColour(muted);g.fillRect(272,344,104,4);g.fillRect(460,344,104,4);
+    g.setColour(accent);g.fillRect(272.f,344.f,104*juce::jlimit(0.f,1.f,processor.bassInput.load()),4.f);
+    g.fillRect(460.f,344.f,104*juce::jlimit(0.f,1.f,processor.bassWet.load()),4.f);
 }
 void BatchlyEditor::timerCallback() {
     if (shownModule != processor.selectedModule()) showModule(processor.selectedModule());

@@ -13,9 +13,10 @@ Inventory refreshed September 26, 2026 from installed VST3 filenames and public 
 7. Illusion-inspired moving delay: Relay, added in 0.7 with original fractional echoes, filtered feedback, pitch movement, time glide and stereo bouncing.
 8. Diablo-inspired drum shaping: Forge, added in 0.8 with original transient detection, parallel body compression, broad tone shelves, saturation, stereo width and soft clipping.
 9. Corrosion-inspired tonal/noise texture: Cinder, added in 0.9 with original filtered grit, separately shaped generated noise, linked release and stereo correlation.
-10. Focused filter and dynamics effects: establish one small, verified module at a time.
-11. Larger multi-effect and vocal processors: only after their component effects work.
-12. Instruments and MIDI tools: separate designs and original or redistributable sound sources.
+10. Vortex-inspired bass saturation: Ember, added in 0.10 with four original continuously blended curves, antiderivative averaging, bias, tone shaping and bass restoration.
+11. Focused filter and dynamics effects: establish one small, verified module at a time.
+12. Larger multi-effect and vocal processors: only after their component effects work.
+13. Instruments and MIDI tools: separate designs and original or redistributable sound sources.
 
 The order after Drift is provisional. Category names below describe the installed plugin metadata, not a completed feature specification.
 

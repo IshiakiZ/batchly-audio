@@ -486,5 +486,47 @@ for index,name in enumerate(("Fine grain","Copper dust","Paper speaker","Ash clo
     sf.write(args.output/f"{36+index:02}-cinder-{name.lower().replace(' ','-')}.wav",textured.T,48000,subtype="PCM_24")
     if index==0:report["cinder_render_seconds_for_17_seconds"]=time.perf_counter()-start
 report["checks"].append("Five original Cinder presets render drums with decayed noise tails and no clipping")
+for sample_rate in (44100,48000,96000):
+    p=load_plugin(str(args.plugin));p.program="Warm foundation"
+    assert p.ember_enabled and not any(getattr(p,n) for n in ("drift_enabled","patina_enabled","atrium_enabled","chime_enabled","helix_enabled","gleam_enabled","relay_enabled","forge_enabled","cinder_enabled"))
+    t=np.arange(sample_rate)/sample_rate;probe=np.stack([.2*np.sin(2*np.pi*110*t)]*2).astype(np.float32)
+    p.ember_mix=0
+    assert np.max(np.abs(p(probe,sample_rate)-probe))<1e-6
+    p.ember_mix=1;p.ember_drive_db=18;p.ember_anchor=0
+    saturated=p(probe,sample_rate,buffer_size=137)
+    assert np.isfinite(saturated).all() and np.sqrt(np.mean((saturated-probe)**2))>.02
+    assert np.max(np.abs(saturated[0]-saturated[1]))<1e-7
+    assert p(probe[:1],sample_rate).shape==probe[:1].shape
+    p.bypass=True
+    assert np.max(np.abs(p(probe,sample_rate)-probe))<1e-6
+    p.bypass=False
+    assert np.max(np.abs(p(np.zeros_like(probe),sample_rate)))==0
+    report["checks"].append(f"{sample_rate} Hz: Ember dry, bass saturation, stereo, mono, bypass, bias-safe silence")
+p.ember_shape=.72;p.ember_color=-.43;p.ember_bias=.61
+accepted={n:p.parameters[n].raw_value for n in ("ember_shape","ember_color","ember_bias")}
+for name in ("drift_enabled","patina_enabled","atrium_enabled","chime_enabled","helix_enabled","gleam_enabled","relay_enabled","forge_enabled","cinder_enabled"):setattr(p,name,True)
+saved=p.raw_state;p.program="Wire bass";p.raw_state=saved
+assert all(abs(p.parameters[n].raw_value-v)<1e-7 for n,v in accepted.items())
+assert all(getattr(p,n) for n in ("drift_enabled","patina_enabled","atrium_enabled","chime_enabled","helix_enabled","gleam_enabled","relay_enabled","forge_enabled","cinder_enabled","ember_enabled"))
+report["checks"].append("Ten-effect rack, shape, signed color and bias survive state recall")
+for version in ("drift-0.1.0","patina-0.2.0","atrium-0.3.0","chime-0.4.0","helix-0.5.0","gleam-0.6.0","relay-0.7.0","forge-0.8.0","cinder-0.9.0"):
+    p.ember_enabled=True
+    p.raw_state=(Path(__file__).resolve().parents[1]/f"tests/fixtures/{version}.bapreset").read_bytes()
+    assert not p.ember_enabled and abs(p.ember_drive_db-9)<.02
+    if version.startswith("cinder"):assert p.cinder_enabled and p.forge_enabled
+    report["checks"].append(f"Actual {version} state disables Ember and retains its saved rack")
+sr=48000;t=np.arange(sr*8)/sr;beat=np.fmod(t,.5);frequency=np.repeat(np.array([55,65.406,73.416,49]),sr*2)
+phase=np.cumsum(2*np.pi*frequency/sr)
+bass=(.22*np.exp(-beat*4)*(.85*np.sin(phase)+.15*np.sin(phase*2))).astype(np.float32)
+bass=np.stack((bass,bass))
+sf.write(args.output/"41-original-bass.wav",bass.T,sr,subtype="PCM_24")
+for index,name in enumerate(("Warm foundation","Wire bass","Dense floor","Folded metal","Quiet ember")):
+    p=load_plugin(str(args.plugin));p.program=name
+    start=time.perf_counter();warm=p(np.pad(bass,((0,0),(0,sr))),sr,buffer_size=257)
+    assert np.isfinite(warm).all() and np.max(np.abs(warm))<1
+    assert np.max(np.abs(warm[:,-4800:]))<1e-5
+    sf.write(args.output/f"{42+index:02}-ember-{name.lower().replace(' ','-')}.wav",warm.T,sr,subtype="PCM_24")
+    if index==0:report["ember_render_seconds_for_9_seconds"]=time.perf_counter()-start
+report["checks"].append("Five original Ember presets render synthesized bass without clipping or residual tails")
 (args.output / "verification.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
 print(json.dumps(report, indent=2))

@@ -104,6 +104,15 @@ juce::AudioProcessorValueTreeState::ParameterLayout BatchlyProcessor::makeLayout
     add("cinder_decay", "Cinder decay (s)", .02f, .8f, .15f, .5f);
     add("cinder_width", "Cinder width", 0, 1, .7f);
     add("cinder_mix", "Cinder mix", 0, 1, 1);
+    layout.add(std::make_unique<juce::AudioParameterBool>(juce::ParameterID { "ember_enabled", 1 }, "Ember enabled", false));
+    add("ember_drive", "Ember drive (dB)", 0, 24, 9);
+    add("ember_shape", "Ember shape", 0, 1, 0);
+    add("ember_color", "Ember color", -1, 1, -.15f);
+    add("ember_filter", "Ember filter (Hz)", 800, 18000, 6500, .35f);
+    add("ember_anchor", "Ember anchor", 0, 1, .65f);
+    add("ember_bias", "Ember bias", 0, 1, .12f);
+    add("ember_trim", "Ember trim (dB)", -18, 0, -5);
+    add("ember_mix", "Ember mix", 0, 1, 1);
     return layout;
 }
 
@@ -129,6 +138,8 @@ BatchlyProcessor::BatchlyProcessor()
     for (size_t i = 0; i < forgeValues.size(); ++i) forgeValues[i] = parameters.getRawParameterValue(batchly::factoryIds[7][i]);
     cinderEnabled = parameters.getRawParameterValue("cinder_enabled");
     for (size_t i = 0; i < cinderValues.size(); ++i) cinderValues[i] = parameters.getRawParameterValue(batchly::factoryIds[8][i]);
+    emberEnabled = parameters.getRawParameterValue("ember_enabled");
+    for (size_t i = 0; i < emberValues.size(); ++i) emberValues[i] = parameters.getRawParameterValue(batchly::factoryIds[9][i]);
     formats.registerBasicFormats();
     if (isStandalone()) getBus(true, 0)->enable(false);
 }
@@ -202,6 +213,11 @@ batchly::RackParameters BatchlyProcessor::readRackParameters() const noexcept {
     p.cinder.toneHz = cinderValues[2]->load(); p.cinder.noiseHz = cinderValues[3]->load();
     p.cinder.drive = cinderValues[4]->load(); p.cinder.decaySeconds = cinderValues[5]->load();
     p.cinder.width = cinderValues[6]->load(); p.cinder.mix = cinderValues[7]->load();
+    p.ember.enabled = emberEnabled->load() > .5f;
+    p.ember.driveDb = emberValues[0]->load(); p.ember.shape = emberValues[1]->load();
+    p.ember.color = emberValues[2]->load(); p.ember.filterHz = emberValues[3]->load();
+    p.ember.anchor = emberValues[4]->load(); p.ember.bias = emberValues[5]->load();
+    p.ember.trimDb = emberValues[6]->load(); p.ember.mix = emberValues[7]->load();
     return p;
 }
 double BatchlyProcessor::getTailLengthSeconds() const {
@@ -244,6 +260,7 @@ void BatchlyProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::Midi
     const auto echoes = engine.relayLevels(); echoLeft.store(echoes[0]); echoRight.store(echoes[1]);
     const auto drums = engine.forgeActivity(); drumAttack.store(drums[0]); drumClipping.store(drums[1]);
     const auto texture = engine.cinderLevels(); gritLevel.store(texture[0]); textureLevel.store(texture[1]);
+    const auto bass = engine.emberLevels(); bassInput.store(bass[0]); bassWet.store(bass[1]);
     const auto levels = engine.chimeLevels();
     for (size_t i = 0; i < levels.size(); ++i) resonatorLevels[i].store(levels[i]);
 }
@@ -291,7 +308,7 @@ bool BatchlyProcessor::isCurrentProgramModified() const {
 }
 void BatchlyProcessor::getStateInformation(juce::MemoryBlock& data) {
     auto state = parameters.copyState();
-    state.setProperty("schemaVersion", 9, nullptr);
+    state.setProperty("schemaVersion", 10, nullptr);
     state.setProperty("program", currentProgram.load(), nullptr);
     for (int module = 0; module < batchly::moduleCount; ++module)
         state.setProperty(batchly::programKeys[module], modulePrograms[module].load(), nullptr);
