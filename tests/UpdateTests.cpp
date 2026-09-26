@@ -15,14 +15,14 @@ int main(int argc, char** argv) {
     try {
         batchly::UpdateRelease release;
         const auto hash = juce::String::repeatedString("a", 64);
-        require(batchly::UpdateService::parseReleaseFeed(feed("0.1.0-preview.2", hash), release).wasOk() && release.available(), "New preview was not detected");
-        require(batchly::UpdateService::parseReleaseFeed(feed("0.1.0-preview.1", hash), release).wasOk() && !release.available(), "Current version offered as update");
-        require(batchly::UpdateService::parseReleaseFeed(feed("0.0.9", hash), release).wasOk() && !release.available(), "Downgrade was offered");
-        require(batchly::UpdateService::parseReleaseFeed(feed("0.1.0", hash), release).wasOk() && release.available(), "Stable release did not supersede preview");
+        require(batchly::UpdateService::parseReleaseFeed(feed("0.1.0-preview.2", hash), release, "0.1.0-preview.1").wasOk() && release.available(), "New preview was not detected");
+        require(batchly::UpdateService::parseReleaseFeed(feed("0.1.0-preview.1", hash), release, "0.1.0-preview.1").wasOk() && !release.available(), "Current version offered as update");
+        require(batchly::UpdateService::parseReleaseFeed(feed("0.0.9", hash), release, "0.1.0-preview.1").wasOk() && !release.available(), "Downgrade was offered");
+        require(batchly::UpdateService::parseReleaseFeed(feed("0.1.0", hash), release, "0.1.0-preview.1").wasOk() && release.available(), "Stable release did not supersede preview");
         require(batchly::UpdateService::parseReleaseFeed(feed("0.2.0-preview.1", hash), release, "0.1.0").wasOk() && !release.available(), "Stable opted into preview");
-        require(batchly::UpdateService::parseReleaseFeed(feed("0.2.0", hash, "https://example.com/"), release).failed(), "Foreign download URL accepted");
-        require(batchly::UpdateService::parseReleaseFeed(feed("0.2.0", "bad"), release).failed(), "Missing digest accepted");
-        require(batchly::UpdateService::parseReleaseFeed("{bad json}", release).failed(), "Malformed response accepted");
+        require(batchly::UpdateService::parseReleaseFeed(feed("0.2.0", hash, "https://example.com/"), release, "0.1.0-preview.1").failed(), "Foreign download URL accepted");
+        require(batchly::UpdateService::parseReleaseFeed(feed("0.2.0", "bad"), release, "0.1.0-preview.1").failed(), "Missing digest accepted");
+        require(batchly::UpdateService::parseReleaseFeed("{bad json}", release, "0.1.0-preview.1").failed(), "Malformed response accepted");
         const auto file = juce::File::getSpecialLocation(juce::File::tempDirectory).getNonexistentChildFile("batchly-update-test", ".zip");
         require(file.replaceWithText("original"), "Could not create test file");
         const auto expected = juce::SHA256(file).toHexString();

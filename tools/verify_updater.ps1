@@ -1,3 +1,4 @@
+param([string]$BuildDirectory = 'build')
 $ErrorActionPreference = 'Stop'
 $project = Split-Path -Parent $PSScriptRoot
 $testFolder = Join-Path $env:LOCALAPPDATA ('BatchlyAudio\updates\selftest-' + [Guid]::NewGuid().ToString('N'))
@@ -5,9 +6,9 @@ $package = Join-Path $testFolder 'package'
 New-Item -ItemType Directory -Path $package -Force | Out-Null
 $relativeFiles = @('Batchly Audio.exe', 'Batchly Audio.vst3/Contents/x86_64-win/Batchly Audio.vst3', 'Batchly Audio.vst3/Contents/Resources/moduleinfo.json')
 $sourceFiles = @(
-    (Join-Path $project 'build\BatchlyAudio_artefacts\Release\Standalone\Batchly Audio.exe'),
-    (Join-Path $project 'build\BatchlyAudio_artefacts\Release\VST3\Batchly Audio.vst3\Contents\x86_64-win\Batchly Audio.vst3'),
-    (Join-Path $project 'build\BatchlyAudio_artefacts\Release\VST3\Batchly Audio.vst3\Contents\Resources\moduleinfo.json')
+    (Join-Path (Join-Path $project $BuildDirectory) 'BatchlyAudio_artefacts\Release\Standalone\Batchly Audio.exe'),
+    (Join-Path (Join-Path $project $BuildDirectory) 'BatchlyAudio_artefacts\Release\VST3\Batchly Audio.vst3\Contents\x86_64-win\Batchly Audio.vst3'),
+    (Join-Path (Join-Path $project $BuildDirectory) 'BatchlyAudio_artefacts\Release\VST3\Batchly Audio.vst3\Contents\Resources\moduleinfo.json')
 )
 $hashes = @{}
 for ($i = 0; $i -lt $relativeFiles.Count; $i++) {

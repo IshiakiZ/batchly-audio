@@ -3,6 +3,7 @@
 Run after building, testing and committing. Uses only Python's standard library.
 """
 import hashlib
+import argparse
 import io
 from pathlib import Path
 import subprocess
@@ -12,7 +13,6 @@ ROOT = Path(__file__).resolve().parents[1]
 VERSION = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
 JUCE_COMMIT = "72782788ce18c2d4d760b28e0921d6ffc6431102"
 OUTPUT = ROOT / "dist"
-ARTIFACTS = ROOT / "build/BatchlyAudio_artefacts/Release"
 
 
 def git(directory, *arguments):
@@ -35,6 +35,9 @@ def add_source(archive, directory, prefix):
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--build-dir", type=Path, default=ROOT / "build")
+    artifacts = parser.parse_args().build_dir / "BatchlyAudio_artefacts/Release"
     if git(ROOT, "status", "--porcelain").strip():
         raise RuntimeError("Commit source changes before packaging so the source matches this preview.")
     juce = ROOT / "vendor/JUCE"
@@ -45,8 +48,8 @@ def main():
     source_zip = OUTPUT / f"Batchly-Audio-{VERSION}-Source.zip"
     commit = git(ROOT, "rev-parse", "HEAD").decode().strip()
     with zipfile.ZipFile(binary_zip, "w", zipfile.ZIP_DEFLATED) as archive:
-        archive.write(ARTIFACTS / "Standalone/Batchly Audio.exe", "Batchly Audio.exe")
-        add_folder(archive, ARTIFACTS / "VST3/Batchly Audio.vst3", "Batchly Audio.vst3")
+        archive.write(artifacts / "Standalone/Batchly Audio.exe", "Batchly Audio.exe")
+        add_folder(archive, artifacts / "VST3/Batchly Audio.vst3", "Batchly Audio.vst3")
         for name in ("README.md", "LICENSE", "THIRD_PARTY_NOTICES.md"):
             archive.write(ROOT / name, name)
         archive.write(ROOT / "tools/install-vst3.ps1", "install-vst3.ps1")

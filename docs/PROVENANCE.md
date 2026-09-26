@@ -12,6 +12,14 @@ Drift does not model the full nonlinear behavior of an analog BBD chip and does 
 
 The demo and listening examples are synthesized from mathematical oscillators. The interface is drawn with native vector shapes. Its light ground, dark ink, red accent, straight borders and Archivo/JetBrains Mono typography follow the owner's Batchly theme. The two fonts are embedded from Google Fonts under their retained SIL Open Font Licenses. These assets require no Cymatics installation or sound library.
 
+## Patina
+
+The functional reference is [Cymatics Origin's public product description](https://cymatics.fm/products/origin-vintage-plugin), consulted September 26, 2026. It describes rate reduction, saturation, noise, pitch movement and chorus. Patina implements those broad musical roles with independently written code. No commercial code, factory settings, recordings, graphics or extracted assets were used.
+
+`src/PatinaEngine.h` uses a fractional sample clock with interpolation at capture boundaries, fourth-order low-pass filters before and after rate reduction, an antiderivative form of tanh saturation, periodic multi-rate pitch modulation, fractional delay chorus and seeded generated hiss. Its fixed-rate periodic movement and original chorus are deliberate design choices, not a model of Origin's private randomizer, tape circuits or Juno chorus. The filters have finite slopes; the engine makes no brick-wall or alias-free claim. All processing storage is allocated during preparation.
+
+The five presets and vector reel-deck artwork are original. Patina keeps Batchly's established typography and colors, with warm brown tape inside the dark transport window. `RackEngine.h` fixes the order to Drift then Patina, with shared gain and global bypass at the end. Old states are filled with defaults for new parameters, keeping Patina off when a 0.1 state is loaded.
+
 ## Framework
 
 JUCE 9.0.2 is pinned to commit `72782788ce18c2d4d760b28e0921d6ffc6431102`. It supplies the GUI, audio-device management, file reading/writing, parameter management, and VST3/standalone wrappers. It does not implement Drift's effect algorithm.

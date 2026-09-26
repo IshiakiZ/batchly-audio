@@ -12,6 +12,9 @@ enable_testing()
 add_executable(drift_tests tests/DriftTests.cpp)
 target_include_directories(drift_tests PRIVATE src)
 add_test(NAME drift_dsp COMMAND drift_tests)
+add_executable(patina_tests tests/PatinaTests.cpp)
+target_include_directories(patina_tests PRIVATE src)
+add_test(NAME patina_dsp COMMAND patina_tests)
 
 if(BATCHLY_BUILD_APP)
     # Pin the framework so a fresh checkout builds against the same audio wrapper.
@@ -31,7 +34,7 @@ if(BATCHLY_BUILD_APP)
         PLUGIN_CODE Badr
         FORMATS VST3 Standalone
         PRODUCT_NAME "Batchly Audio"
-        DESCRIPTION "Drift - original chorus and vibrato"
+        DESCRIPTION "Drift and Patina - original modulation and tape color"
         IS_SYNTH FALSE
         NEEDS_MIDI_INPUT FALSE
         NEEDS_MIDI_OUTPUT FALSE

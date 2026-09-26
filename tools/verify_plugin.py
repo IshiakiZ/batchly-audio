@@ -87,5 +87,60 @@ sf.write(args.output / "03-drift-vibrato.wav", vibrato.T, sample_rate, subtype="
 report["render_seconds_for_12_seconds"] = elapsed
 report["chorus_peak"] = float(np.max(np.abs(processed)))
 report["checks"].append("Original listening examples rendered without clipping")
+
+for sample_rate in (44100, 48000, 96000):
+    p = load_plugin(str(args.plugin))
+    p.program = "Fresh spool"
+    assert p.patina_enabled and not p.drift_enabled
+    t = np.arange(sample_rate * 2, dtype=np.float64) / sample_rate
+    probe = np.stack([.1 * np.sin(2 * np.pi * 443 * t)] * 2).astype(np.float32)
+    p.patina_mix = 0
+    assert np.max(np.abs(p(probe, sample_rate) - probe)) < 1e-6
+    p.patina_mix = 1
+    p.patina_chorus = 1
+    tape = p(probe, sample_rate, buffer_size=137)
+    assert np.isfinite(tape).all() and np.max(np.abs(tape)) < 1
+    assert np.sqrt(np.mean((tape[0] - tape[1]) ** 2)) > .005
+    p.bypass = True
+    assert np.max(np.abs(p(probe, sample_rate) - probe)) < 1e-6
+    p.bypass = False
+    assert p(probe[:1], sample_rate).shape == probe[:1].shape
+    p.patina_hiss = 0
+    assert np.max(np.abs(p(np.zeros_like(probe), sample_rate))) == 0
+    report["checks"].append(f"{sample_rate} Hz: Patina dry, wet, stereo, global bypass, mono, noise-off silence")
+
+p.patina_wear = .71
+p.patina_sample_rate_hz = 8000
+p.drift_enabled = True
+saved = p.raw_state
+p.patina_wear = .01
+p.patina_enabled = False
+p.raw_state = saved
+assert abs(p.patina_wear - .71) < .002 and p.patina_enabled and p.drift_enabled
+report["checks"].append("Two-module rack and Patina controls survive state recall")
+
+# Captured from the released 0.1.0 plugin, with Depth 61% and Mix 42%.
+p.raw_state = (Path(__file__).resolve().parents[1] / "tests/fixtures/drift-0.1.0.bapreset").read_bytes()
+assert abs(p.depth - .61) < .002 and abs(p.mix - .42) < .002
+assert p.drift_enabled and not p.patina_enabled
+assert abs(p.patina_wear - .2) < .002
+report["checks"].append("Actual 0.1.0 state disables Patina and restores legacy Drift controls")
+
+p = load_plugin(str(args.plugin))
+p.program = "Fresh spool"
+start = time.perf_counter()
+tape = p(source, 48000, buffer_size=512)
+report["patina_render_seconds_for_12_seconds"] = time.perf_counter() - start
+assert np.isfinite(tape).all() and np.max(np.abs(tape)) < 1
+sf.write(args.output / "04-patina-fresh-spool.wav", tape.T, 48000, subtype="PCM_24")
+p.program = "Submerged"
+submerged = p(source, 48000)
+sf.write(args.output / "05-patina-submerged.wav", submerged.T, 48000, subtype="PCM_24")
+p.program = "Pocket cassette"
+p.drift_enabled = True
+stacked = p(source, 48000)
+assert np.isfinite(stacked).all() and np.max(np.abs(stacked)) < 1
+sf.write(args.output / "06-drift-into-patina.wav", stacked.T, 48000, subtype="PCM_24")
+report["checks"].append("Patina and combined-rack listening examples rendered without clipping")
 (args.output / "verification.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
 print(json.dumps(report, indent=2))
